@@ -34,14 +34,14 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 
 public class AutomeowClient implements ClientModInitializer {
     // Tunables
-    private static final int  MY_MESSAGES_REQUIRED = 3;      // you must send 3 msgs between auto-replies
-    private static final long QUIET_AFTER_SEND_MS  = 3500;   // mute echoes after we send (and after you type meow)
+    public static volatile int  MY_MESSAGES_REQUIRED = 3;      // you must send 3 msgs between auto-replies
+    public static volatile long QUIET_AFTER_SEND_MS  = 3500;   // mute echoes after we send (and after you type meow)
     private static final int PASTEL_PINK = 0xFFC0CB; // soft pastel pink (#ffc0cb)
-    private static final AtomicBoolean CHROMA_WANTED = new AtomicBoolean(false); // user toggle for chroma
+    public static final AtomicBoolean CHROMA_WANTED = new AtomicBoolean(false); // user toggle for chroma
     private static final int AARON_CHROMA_SENTINEL = 0xAA5500;
 
     // State
-    private static final AtomicBoolean ENABLED = new AtomicBoolean(true);
+    public static final AtomicBoolean ENABLED = new AtomicBoolean(true);
     private static final AtomicInteger myMsgsSinceReply = new AtomicInteger(MY_MESSAGES_REQUIRED); // start "ready"
     private static final AtomicLong    quietUntil       = new AtomicLong(0);
     private static final AtomicBoolean skipNextOwnIncrement = new AtomicBoolean(false);
@@ -49,6 +49,8 @@ public class AutomeowClient implements ClientModInitializer {
     // Config state
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Path CONFIG_PATH;
+
+    // Toggles
 
     private static class Config {
         boolean enabled = true;
@@ -76,7 +78,7 @@ public class AutomeowClient implements ClientModInitializer {
         } catch (Exception ignored) {}
     }
 
-    private static void saveConfig() {
+    public static void saveConfig() {
         try {
             if (CONFIG_PATH == null) {
                 Path dir = MinecraftClient.getInstance().runDirectory.toPath().resolve("config");
@@ -102,7 +104,7 @@ public class AutomeowClient implements ClientModInitializer {
         return fl.isModLoaded("aaron-mod") || fl.isModLoaded("azureaaron"); // cover both ids
     }
 
-    private static boolean aaronChromaAvailable() {
+    public static boolean aaronChromaAvailable() {
         if (!hasAaronMod()) return false;
         try {
             Class<?> c = Class.forName("net.azureaaron.mod.features.ChromaText");
@@ -113,6 +115,7 @@ public class AutomeowClient implements ClientModInitializer {
             return false;
         }
     }
+
 
 
     // [AutoMeow] Prefix

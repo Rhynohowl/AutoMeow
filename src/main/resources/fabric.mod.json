@@ -1,13 +1,15 @@
 {
   "schemaVersion": 1,
   "id": "automeow",
-  "version": "1.0.0",
+  "version": "1.1",
   "name": "AutoMeow",
   "description": "Automatically replies \"meow\" when someone says \"meow\" in chat.",
   "authors": ["Rhynohowl"],
   "environment": "client",
   "entrypoints": {
-    "client": ["org.rhynohowl.automeow.client.AutomeowClient"] },
+    "client": ["org.rhynohowl.automeow.client.AutomeowClient"],
+    "modmenu": ["org.rhynohowl.automeow.client.AutomeowModMenu"]
+  },
   "icon": "assets/automeow/icon.png",
   "depends": {
     "fabricloader": ">=0.15.0",
