@@ -57,3 +57,7 @@ gradlew.bat build
 
 # macOS/Linux
 ./gradlew build
+
+
+```
+# This code sucks but it works. Any issue please report and I will fix ASAP :>
