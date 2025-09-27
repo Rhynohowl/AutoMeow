@@ -1,0 +1,74 @@
+name: auto-semver-release
+
+on:
+  workflow_dispatch: {}         # run manually
+  push:
+    branches: [ main ]          
+
+permissions:
+  contents: write               
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    env:
+      JAVA_VERSION: "21"
+      MAJOR: "1"               # <- fixed major. change to "2" if I ever push a MAJOR change :3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Temurin JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Fetch tags
+        run: git fetch --tags --force
+
+      - name: Compute next 1.x version
+        id: ver
+        shell: bash
+        run: |
+          # find latest tag like v1.<number> only
+          LATEST=$(git tag -l "v${MAJOR}.[0-9]*" | sed -E "s/^v${MAJOR}\.//" | sort -n | tail -n1)
+          if [[ -z "$LATEST" ]]; then
+            NEXT_MINOR=0
+          else
+            NEXT_MINOR=$((LATEST + 1))
+          fi
+          VERSION="${MAJOR}.${NEXT_MINOR}"
+          TAG="v${VERSION}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}"         >> "$GITHUB_OUTPUT"
+          echo "Next version: ${VERSION}"
+
+      - name: Build (sets Gradle version to 1.x)
+        run: ./gradlew -Pmod_version="${{ steps.ver.outputs.version }}" clean build
+
+      # Optional: verify the jar we expect exists
+      - name: List jars
+        run: ls -lh build/libs
+
+      - name: Create GitHub Release v1.x
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}                 # creates the tag if it doesnt exist
+          name:     "AutoMeow ${{ steps.ver.outputs.version }}"
+          generate_release_notes: true
+          files: |
+            build/libs/Automeow-${{ steps.ver.outputs.version }}.jar
+            build/libs/Automeow-${{ steps.ver.outputs.version }}-sources.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
