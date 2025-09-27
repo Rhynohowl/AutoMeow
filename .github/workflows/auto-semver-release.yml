@@ -1,7 +1,7 @@
 name: auto-semver-release
 
 on:
-  workflow_dispatch: {}         # run manually
+  workflow_dispatch: {}
   push:
     branches: [ main ]          
 
@@ -61,14 +61,23 @@ jobs:
       - name: List jars
         run: ls -lh build/libs
 
+      - name: Find release jar
+        id: jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR=$(ls -1 build/libs/*.jar | grep -Ev -- '-sources\.jar$|-dev\.jar$' | head -n1)
+          echo "jar=$JAR" >> "$GITHUB_OUTPUT"
+          echo "Selected JAR: $JAR"
+
       - name: Create GitHub Release v1.x
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}                 # creates the tag if it doesnt exist
-          name:     "AutoMeow ${{ steps.ver.outputs.version }}"
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: "AutoMeow ${{ steps.ver.outputs.version }}"
           generate_release_notes: true
-          files: |
-            build/libs/Automeow-${{ steps.ver.outputs.version }}.jar
-            build/libs/Automeow-${{ steps.ver.outputs.version }}-sources.jar
+          files: ${{ steps.jar.outputs.jar }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
