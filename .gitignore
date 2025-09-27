@@ -1,0 +1,27 @@
+# ---- Gradle ----
+.gradle/
+**/build/
+# keep the wrapper (must be committed!)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# ---- Fabric Loom ----
+run/
+
+# ---- IntelliJ IDEA ----
+.idea/
+*.iml
+out/
+
+# ---- Java / JVM ----
+*.class
+hs_err_pid*.log
+replay_pid*.log
+
+# ---- Logs ----
+*.log
+
+# ---- Misc backups ----
+*.orig
+*.bak
+*~
