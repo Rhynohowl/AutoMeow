@@ -10,17 +10,24 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
+import java.util.regex.Pattern;
+
 public class AutomeowModMenu implements ModMenuApi {
+
+    // same pattern your client uses
+    private static final Pattern CAT_SOUND = Pattern.compile(
+            "(mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
+            Pattern.CASE_INSENSITIVE
+    );
 
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
         return (Screen parent) -> {
-            // Build the screen
             ConfigBuilder builder = ConfigBuilder.create()
                     .setParentScreen(parent)
                     .setTitle(Text.literal("[AutoMeow] Settings"));
 
-            // Save callback (called when the user clicks "Done")
+            // Save callback when user clicks "Done"
             builder.setSavingRunnable(AutomeowModMenu::saveToDisk);
 
             ConfigCategory general = builder.getOrCreateCategory(Text.literal("General"));
@@ -48,12 +55,10 @@ public class AutomeowModMenu implements ModMenuApi {
                                                     .formatted(Formatting.GRAY))
                             )
                             .build();
-
-            // Visually disable when chroma is not available
             chromaEntry.setEditable(canChroma);
             general.addEntry(chromaEntry);
 
-            // My messages required (slider 1..10)
+            // My messages required (0..10; 0 disables)
             general.addEntry(
                     eb.startIntSlider(Text.literal("My messages required (0 disables)"),
                                     AutomeowClient.MY_MESSAGES_REQUIRED, 0, 10)
@@ -73,7 +78,34 @@ public class AutomeowModMenu implements ModMenuApi {
                             .setSaveConsumer(val ->
                                     AutomeowClient.QUIET_AFTER_SEND_MS = (long) Math.max(0, Math.min(val, 20000)))
                             .setTooltip(Text.literal("Ignore immediate echoes for this many milliseconds\n"
-                                    + "after the bot (or you) sends a meow."))
+                                    + "after the bot (or you) sends a message."))
+                            .build()
+            );
+
+            // :3 toggle
+            general.addEntry(
+                    eb.startBooleanToggle(Text.literal("Append \" :3\" to reply"), AutomeowClient.APPEND_FACE.get())
+                            .setDefaultValue(false)
+                            .setSaveConsumer(val -> { AutomeowClient.APPEND_FACE.set(val); AutomeowClient.saveConfig(); })
+                            .setTooltip(Text.literal("When enabled, the mod sends your reply text followed by \" :3\"."))
+                            .build()
+            );
+
+
+            // Reply text (must contain "mer")
+            general.addEntry(
+                    eb.startStrField(Text.literal("Reply text"), AutomeowClient.REPLY_TEXT)
+                            .setTooltip(Text.literal(
+                                    "What the mod sends back. Must include a cat sound:\n" +
+                                            "mer / mrrp / mrow / nya(a~). Max 32 chars."
+                            ))
+                            .setSaveConsumer(val -> {
+                                String s = val == null ? "" : val.trim();
+                                if (s.length() <= 32 && CAT_SOUND.matcher(s).find()) {
+                                    AutomeowClient.setReplyText(s, /*fromUser=*/true);
+                                    AutomeowClient.saveConfig();
+                                }
+                            })
                             .build()
             );
 
@@ -82,7 +114,6 @@ public class AutomeowModMenu implements ModMenuApi {
     }
 
     private static void saveToDisk() {
-        // Persist to your existing JSON config
         AutomeowClient.saveConfig();
     }
 }

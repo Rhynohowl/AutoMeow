@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
+import com.mojang.brigadier.arguments.StringArgumentType;
+
 
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -45,6 +47,8 @@ public class AutomeowClient implements ClientModInitializer {
     private static final AtomicInteger myMsgsSinceReply = new AtomicInteger(MY_MESSAGES_REQUIRED); // start "ready"
     private static final AtomicLong    quietUntil       = new AtomicLong(0);
     private static final AtomicBoolean skipNextOwnIncrement = new AtomicBoolean(false);
+    public static final java.util.concurrent.atomic.AtomicBoolean APPEND_FACE = new java.util.concurrent.atomic.AtomicBoolean(false);
+
 
     // Config state
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -55,6 +59,8 @@ public class AutomeowClient implements ClientModInitializer {
     private static class Config {
         boolean enabled = true;
         boolean chroma = false;
+        String replyText = "meow";
+        boolean appendFace = false;
     }
     private static Config CONFIG = new Config();
 
@@ -75,6 +81,13 @@ public class AutomeowClient implements ClientModInitializer {
 
         ENABLED.set(CONFIG.enabled);
         CHROMA_WANTED.set(CONFIG.chroma);
+        APPEND_FACE.set(CONFIG.appendFace);
+
+        // reply text: allow anything from disk; enforce "mer" only on user edits
+        if (!setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow", /*fromUser=*/false)) {
+            REPLY_TEXT = "meow";
+            }
+
         } catch (Exception ignored) {}
     }
 
@@ -87,6 +100,8 @@ public class AutomeowClient implements ClientModInitializer {
             }
             CONFIG.enabled = ENABLED.get();
             CONFIG.chroma = CHROMA_WANTED.get();
+            CONFIG.replyText = REPLY_TEXT;
+            CONFIG.appendFace = APPEND_FACE.get();
             Files.writeString(
                     CONFIG_PATH, GSON.toJson(CONFIG),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
@@ -139,7 +154,24 @@ public class AutomeowClient implements ClientModInitializer {
         return badge().append(state);
     }
 
+    // Custom reply text (what we send). Default: "meow".
+    public static volatile String REPLY_TEXT = "meow";
 
+    // Allow replies that contain "mer" anywhere (case-insensitive), e.g., merp/meraow/merps.
+    private static final Pattern CAT_SOUND = Pattern.compile(
+            "(mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    // Validate & set. If fromUser=true we enforce the "mer" rule; default load can stay "meow".
+    public static boolean setReplyText(String s, boolean fromUser) {
+        if (s == null) return false;
+        String t = s.trim();
+        if (t.isEmpty() || t.length() > 32) return false;
+        if (fromUser && !CAT_SOUND.matcher(t).find()) return false;
+        REPLY_TEXT = t;
+        return true;
+    }
 
     @Override
     public void onInitializeClient() {
@@ -216,6 +248,49 @@ public class AutomeowClient implements ClientModInitializer {
                                                 .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
                                 return newValue ? 1 : 0;
                             }))
+                            .then(literal("face")
+                                    .executes(ctx -> {
+                                        boolean on = APPEND_FACE.get();
+                                        ctx.getSource().sendFeedback(
+                                                badge().append(Text.literal(" :3 " + (on ? "ON" : "OFF"))
+                                                        .formatted(on ? Formatting.GREEN : Formatting.RED)));
+                                        return on ? 1 : 0;
+                                    })
+                                    .then(literal("on").executes(ctx -> { APPEND_FACE.set(true);  saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 ON").formatted(Formatting.GREEN)));
+                                        return 1; }))
+                                    .then(literal("off").executes(ctx -> { APPEND_FACE.set(false); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 OFF").formatted(Formatting.RED)));
+                                        return 1; }))
+                                    .then(literal("toggle").executes(ctx -> {
+                                        boolean nv = !APPEND_FACE.get(); APPEND_FACE.set(nv); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 " + (nv ? "ON" : "OFF"))
+                                                .formatted(nv ? Formatting.GREEN : Formatting.RED)));
+                                        return nv ? 1 : 0;
+                                    }))
+                            )
+                            .then(literal("say")
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+                                            .argument("text", StringArgumentType.greedyString())
+                                            .executes(ctx -> {
+                                                String wanted = StringArgumentType.getString(ctx, "text");
+                                                boolean ok = setReplyText(wanted, true);
+                                                if (ok) {
+                                                    saveConfig();
+                                                    ctx.getSource().sendFeedback(
+                                                            badge().append(Text.literal("reply set to \"" + REPLY_TEXT + "\"").formatted(Formatting.GREEN))
+                                                    );
+                                                    return 1;
+                                                } else {
+                                                    ctx.getSource().sendFeedback(
+                                                            badge().append(Text.literal("reply must contain a cat sound: mer / mrrp / mrow / nya(a~)")
+                                                                    .formatted(Formatting.RED))
+                                                    );
+                                                    return 0;
+                                                }
+                                            })
+                                    )
+                            )
 
             );
         });
@@ -245,7 +320,8 @@ public class AutomeowClient implements ClientModInitializer {
         mc.execute(() -> {
             if (mc.player != null && mc.player.networkHandler != null) {
                 skipNextOwnIncrement.set(true); // dont count only reply
-                mc.player.networkHandler.sendChatMessage("meow");
+                String out = AutomeowClient.REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
+                mc.player.networkHandler.sendChatMessage(out);
                 quietUntil.set(System.currentTimeMillis() + QUIET_AFTER_SEND_MS);
                 myMsgsSinceReply.set(0); // require 3 of OWN msgs before next auto-reply (I was checking all before)
             }
