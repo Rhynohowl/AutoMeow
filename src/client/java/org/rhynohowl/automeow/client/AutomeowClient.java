@@ -73,6 +73,11 @@ public class AutomeowClient implements ClientModInitializer {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Path CONFIG_PATH;
 
+    private enum HpChannel { ALL, GUILD, PARTY }
+
+    private static final java.util.regex.Pattern HP_PREFIX =
+            java.util.regex.Pattern.compile("^(Party|Guild)\\s*>\\s*", java.util.regex.Pattern.CASE_INSENSITIVE);
+
 
     // Toggles
 
@@ -83,6 +88,18 @@ public class AutomeowClient implements ClientModInitializer {
         boolean appendFace = false;
         boolean playSound = true;
         boolean heartsEffect = true;
+    }
+
+    private static HpChannel detectHpChan(String raw) {
+        if (raw == null) return HpChannel.ALL;
+        String s = raw.stripLeading();
+        var m = HP_PREFIX.matcher(s);
+        if (!m.find()) return HpChannel.ALL;
+        switch (m.group(1).toLowerCase(java.util.Locale.ROOT)) {
+            case "party":   return HpChannel.PARTY;
+            case "guild":   return HpChannel.GUILD;
+            default:        return HpChannel.ALL;
+        }
     }
 
     private static Config CONFIG = new Config();
@@ -382,7 +399,12 @@ public class AutomeowClient implements ClientModInitializer {
         });
 
         // React to incoming chat
-        ClientReceiveMessageEvents.CHAT.register(this::onChat);
+        ClientReceiveMessageEvents.CHAT.register(
+                (message, signedMessage, sender, params, ts) -> handleIncoming(message, sender)
+        );
+        ClientReceiveMessageEvents.GAME.register(
+                (message, overlay) -> handleIncoming(message, null) // GAME/system has no sender
+        );
 
         // Reset counter on lobby/world change
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -532,24 +554,19 @@ public class AutomeowClient implements ClientModInitializer {
         });
     }
 
-    private void onChat(
-            Text message, SignedMessage signedMessage, GameProfile sender,
-            MessageType.Parameters params, Instant receptionTimestamp
-    ) {
+    private void handleIncoming(Text message, GameProfile sender) {
         if (!ENABLED.get()) return;
 
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null) return;
 
-        // Get the plain string once
         String raw = message.getString();
         if (raw == null) return;
 
-        // If this line looks like a cat sound, try to show SFX/VFX at the speaker
+        // play SFX at play who meows & self
         if (CAT_SOUND.matcher(raw).find()) {
             PlayerEntity src = resolveSender(mc, sender, raw);
             if (src != null) {
-                // don’t double-play for our own echo
                 UUID me = mc.getSession().getUuidOrNull();
                 if (me == null || !me.equals(src.getUuid())) {
                     mc.execute(() -> triggerCatCueAt(src));
@@ -559,10 +576,9 @@ public class AutomeowClient implements ClientModInitializer {
 
         long now = System.currentTimeMillis();
         if (now < quietUntil.get()) return;
-
         if (!MEOW.matcher(raw).find()) return;
 
-        // ignore our own lines if the server echoes them with a sender
+        // ignore our own lines (when CHAT provides a sender)
         UUID me = mc.getSession().getUuidOrNull();
         if (sender != null && me != null && me.equals(sender.getId())) return;
 
@@ -571,12 +587,15 @@ public class AutomeowClient implements ClientModInitializer {
         mc.execute(() -> {
             if (mc.player != null && mc.player.networkHandler != null) {
                 skipNextOwnIncrement.set(true);
+
                 String out = REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
-                mc.player.networkHandler.sendChatMessage(out);
-
-                // cue at us when we reply
+                String toSend = switch (detectHpChan(raw)) {
+                    case GUILD -> "/gc " + out;
+                    case PARTY -> "/pc " + out;
+                    default -> out;
+                };
+                mc.player.networkHandler.sendChatMessage(toSend);
                 triggerCatCueAt(mc.player);
-
                 quietUntil.set(System.currentTimeMillis() + QUIET_AFTER_SEND_MS);
                 myMsgsSinceReply.set(0);
             }
