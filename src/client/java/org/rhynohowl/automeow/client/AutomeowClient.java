@@ -33,8 +33,16 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-
-
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import net.minecraft.text.Style;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
 
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -49,6 +57,9 @@ public class AutomeowClient implements ClientModInitializer {
     public static final java.util.concurrent.atomic.AtomicBoolean PLAY_SOUND = new java.util.concurrent.atomic.AtomicBoolean(true);
     public static final java.util.concurrent.atomic.AtomicBoolean HEARTS_EFFECT = new java.util.concurrent.atomic.AtomicBoolean(true);
 
+    // Modrinth
+    private static final String MODRINTH_SLUG = "automeow"; // your Modrinth project slug
+    private static final int    UPDATE_HTTP_TIMEOUT_SEC = 6;
 
     // State
     public static final AtomicBoolean ENABLED = new AtomicBoolean(true);
@@ -62,6 +73,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Path CONFIG_PATH;
 
+
     // Toggles
 
     private static class Config {
@@ -74,6 +86,101 @@ public class AutomeowClient implements ClientModInitializer {
     }
 
     private static Config CONFIG = new Config();
+
+    // Compare dotted numbers like "1.9.2" vs "1.10"
+    private static int cmpVer(String a, String b) {
+        String[] aa = a.split("\\D+");
+        String[] bb = b.split("\\D+");
+        int n = Math.max(aa.length, bb.length);
+        for (int i = 0; i < n; i++) {
+            int x = i < aa.length ? parseOrZero(aa[i]) : 0;
+            int y = i < bb.length ? parseOrZero(bb[i]) : 0;
+            if (x != y) return Integer.compare(x, y);
+        }
+        return 0;
+    }
+    private static int parseOrZero(String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
+
+    private static String currentModVersion() {
+        return FabricLoader.getInstance()
+                .getModContainer("automeow")              // your mod id from fabric.mod.json
+                .map(c -> c.getMetadata().getVersion().getFriendlyString())
+                .orElse("0");
+    }
+
+
+    private static void checkForUpdateAsync() {
+        final String cur = currentModVersion();
+
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
+                .build();
+
+        // “All versions” endpoint, we’ll pick the newest stable one.
+        String url = "https://api.modrinth.com/v2/project/" + MODRINTH_SLUG + "/version";
+
+        HttpRequest req = HttpRequest.newBuilder(URI.create(url))
+                .header("User-Agent", "AutoMeow/" + cur + " (Modrinth update check)")
+                .timeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
+                .build();
+
+        client.sendAsync(req, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .exceptionally(ex -> null)
+                .thenAccept(body -> {
+                    if (body == null) return;
+                    try {
+                        JsonArray arr = JsonParser.parseString(body).getAsJsonArray();
+                        String bestVer = null;
+                        String bestUrl = null;
+                        java.time.Instant bestDate = java.time.Instant.EPOCH;
+
+                        for (int i = 0; i < arr.size(); i++) {
+                            JsonObject v = arr.get(i).getAsJsonObject();
+                            // Prefer stable releases
+                            String type = v.has("version_type") ? v.get("version_type").getAsString() : "release";
+                            if (!"release".equalsIgnoreCase(type)) continue;
+
+                            String ver = v.get("version_number").getAsString();
+                            java.time.Instant published = java.time.Instant.parse(v.get("date_published").getAsString());
+
+                            if (bestVer == null || published.isAfter(bestDate)) {
+                                bestVer = ver;
+                                bestDate = published;
+                                bestUrl = "https://modrinth.com/mod/" + MODRINTH_SLUG + "/version/" + ver;
+                            }
+                        }
+                        if (bestVer == null) return;
+                        if (cmpVer(bestVer, cur) > 0) {
+                            final String latest = bestVer;
+                            final String dlUrl  = bestUrl;
+
+                            // Clientside hyperlink
+                            MinecraftClient mc = MinecraftClient.getInstance();
+                            if (mc != null) {
+                                mc.execute(() -> {
+                                    var link = Text.literal("Download update")
+                                            .setStyle(
+                                                    Style.EMPTY
+                                                            .withColor(Formatting.BLUE)
+                                                            .withUnderline(true)
+                                                            .withClickEvent(new ClickEvent.OpenUrl(URI.create(dlUrl)))           // ← open URL
+                                                            .withHoverEvent(new HoverEvent.ShowText(Text.literal(dlUrl))) // ← tooltip
+                                            );
+
+                                    var msg = badge()
+                                            .append(Text.literal(" Update available ").formatted(Formatting.YELLOW))
+                                            .append(Text.literal("(v" + cur + " → v" + latest + ") ").formatted(Formatting.GRAY))
+                                            .append(link);
+
+                                    mc.inGameHud.getChatHud().addMessage(msg); // local only
+                                });
+                            }
+                        }
+                    } catch (Throwable ignored) { /* swallow quietly */ }
+                });
+    }
+
 
 
     // Load on startup
@@ -252,6 +359,7 @@ public class AutomeowClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         loadConfig();
+        checkForUpdateAsync();
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> saveConfig());
         // Count outgoing messages YOU type; start a quiet window if you typed "meow"
         ClientSendMessageEvents.CHAT.register(msg -> {
