@@ -331,33 +331,70 @@ public class AutomeowClient implements ClientModInitializer {
                                                 .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
                                 return newValue ? 1 : 0;
                             }))
-                            .then(literal("face")
+                            .then(literal("hearts")
+                                    // `/automeow hearts` -> TOGGLE
                                     .executes(ctx -> {
-                                        boolean on = APPEND_FACE.get();
+                                        boolean newValue = !HEARTS_EFFECT.get();
+                                        HEARTS_EFFECT.set(newValue);
+                                        saveConfig();
                                         ctx.getSource().sendFeedback(
-                                                badge().append(Text.literal(" :3 " + (on ? "ON" : "OFF"))
-                                                        .formatted(on ? Formatting.GREEN : Formatting.RED)));
-                                        return on ? 1 : 0;
+                                                badge().append(Text.literal("Hearts " + (newValue ? "ON" : "OFF"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
                                     })
                                     .then(literal("on").executes(ctx -> {
-                                        APPEND_FACE.set(true);
-                                        saveConfig();
-                                        ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 ON").formatted(Formatting.GREEN)));
+                                        HEARTS_EFFECT.set(true); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal("Hearts ON").formatted(Formatting.GREEN)));
                                         return 1;
                                     }))
                                     .then(literal("off").executes(ctx -> {
-                                        APPEND_FACE.set(false);
-                                        saveConfig();
-                                        ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 OFF").formatted(Formatting.RED)));
+                                        HEARTS_EFFECT.set(false); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal("Hearts OFF").formatted(Formatting.RED)));
                                         return 1;
                                     }))
-                                    .then(literal("toggle").executes(ctx -> {
-                                        boolean nv = !APPEND_FACE.get();
-                                        APPEND_FACE.set(nv);
+                            )
+                            .then(literal("sound")
+                                    // `/automeow sound` -> TOGGLE
+                                    .executes(ctx -> {
+                                        boolean newValue = !PLAY_SOUND.get();
+                                        PLAY_SOUND.set(newValue);
                                         saveConfig();
-                                        ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 " + (nv ? "ON" : "OFF"))
-                                                .formatted(nv ? Formatting.GREEN : Formatting.RED)));
-                                        return nv ? 1 : 0;
+                                        ctx.getSource().sendFeedback(
+                                                badge().append(Text.literal("Cat Sound " + (newValue ? "ON" : "OFF"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    })
+                                    .then(literal("on").executes(ctx -> {
+                                        PLAY_SOUND.set(true); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal("Cat Sound ON").formatted(Formatting.GREEN)));
+                                        return 1;
+                                    }))
+                                    .then(literal("off").executes(ctx -> {
+                                        PLAY_SOUND.set(false); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal("Cat Sound OFF").formatted(Formatting.RED)));
+                                        return 1;
+                                    }))
+                            )
+                            .then(literal("face")
+                                    // `/automeow face` -> TOGGLE
+                                    .executes(ctx -> {
+                                        boolean newValue = !APPEND_FACE.get();
+                                        APPEND_FACE.set(newValue);
+                                        saveConfig();
+                                        ctx.getSource().sendFeedback(
+                                                badge().append(Text.literal("Cat Face " + (newValue ? "ON" : "OFF"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    })
+                                    .then(literal("on").executes(ctx -> {
+                                        APPEND_FACE.set(true); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal("Cat Face ON").formatted(Formatting.GREEN)));
+                                        return 1;
+                                    }))
+                                    .then(literal("off").executes(ctx -> {
+                                        APPEND_FACE.set(false); saveConfig();
+                                        ctx.getSource().sendFeedback(badge().append(Text.literal("Cat Face OFF").formatted(Formatting.RED)));
+                                        return 1;
                                     }))
                             )
                             .then(literal("say")
