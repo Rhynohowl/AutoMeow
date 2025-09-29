@@ -29,6 +29,11 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+
 
 
 
@@ -36,16 +41,19 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 
 public class AutomeowClient implements ClientModInitializer {
     // Tunables
-    public static volatile int  MY_MESSAGES_REQUIRED = 3;      // you must send 3 msgs between auto-replies
-    public static volatile long QUIET_AFTER_SEND_MS  = 3500;   // mute echoes after we send (and after you type meow)
+    public static volatile int MY_MESSAGES_REQUIRED = 3;      // you must send 3 msgs between auto-replies
+    public static volatile long QUIET_AFTER_SEND_MS = 3500;   // mute echoes after we send (and after you type meow)
     private static final int PASTEL_PINK = 0xFFC0CB; // soft pastel pink (#ffc0cb)
     public static final AtomicBoolean CHROMA_WANTED = new AtomicBoolean(false); // user toggle for chroma
     private static final int AARON_CHROMA_SENTINEL = 0xAA5500;
+    public static final java.util.concurrent.atomic.AtomicBoolean PLAY_SOUND = new java.util.concurrent.atomic.AtomicBoolean(true);
+    public static final java.util.concurrent.atomic.AtomicBoolean HEARTS_EFFECT = new java.util.concurrent.atomic.AtomicBoolean(true);
+
 
     // State
     public static final AtomicBoolean ENABLED = new AtomicBoolean(true);
     private static final AtomicInteger myMsgsSinceReply = new AtomicInteger(MY_MESSAGES_REQUIRED); // start "ready"
-    private static final AtomicLong    quietUntil       = new AtomicLong(0);
+    private static final AtomicLong quietUntil = new AtomicLong(0);
     private static final AtomicBoolean skipNextOwnIncrement = new AtomicBoolean(false);
     public static final java.util.concurrent.atomic.AtomicBoolean APPEND_FACE = new java.util.concurrent.atomic.AtomicBoolean(false);
 
@@ -61,8 +69,12 @@ public class AutomeowClient implements ClientModInitializer {
         boolean chroma = false;
         String replyText = "meow";
         boolean appendFace = false;
+        boolean playSound = true;
+        boolean heartsEffect = true;
     }
+
     private static Config CONFIG = new Config();
+
 
     // Load on startup
     private static void loadConfig() {
@@ -71,24 +83,27 @@ public class AutomeowClient implements ClientModInitializer {
             Files.createDirectories(dir);
             CONFIG_PATH = dir.resolve("automeow.json");
 
-        if (Files.exists(CONFIG_PATH)) {
-            String json = Files.readString(CONFIG_PATH);
-            Config loaded = GSON.fromJson(json, Config.class);
-            if (loaded != null) CONFIG = loaded;
-        }    else {
-            saveConfig(); // write defaults
-        }
-
-        ENABLED.set(CONFIG.enabled);
-        CHROMA_WANTED.set(CONFIG.chroma);
-        APPEND_FACE.set(CONFIG.appendFace);
-
-        // reply text: allow anything from disk; enforce "mer" only on user edits
-        if (!setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow", /*fromUser=*/false)) {
-            REPLY_TEXT = "meow";
+            if (Files.exists(CONFIG_PATH)) {
+                String json = Files.readString(CONFIG_PATH);
+                Config loaded = GSON.fromJson(json, Config.class);
+                if (loaded != null) CONFIG = loaded;
+            } else {
+                saveConfig(); // write defaults
             }
 
-        } catch (Exception ignored) {}
+            ENABLED.set(CONFIG.enabled);
+            CHROMA_WANTED.set(CONFIG.chroma);
+            APPEND_FACE.set(CONFIG.appendFace);
+            PLAY_SOUND.set(CONFIG.playSound);
+            HEARTS_EFFECT.set(CONFIG.heartsEffect);
+
+            // reply text: allow anything from disk; enforce "mer" only on user edits
+            if (!setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow", /*fromUser=*/false)) {
+                REPLY_TEXT = "meow";
+            }
+
+        } catch (Exception ignored) {
+        }
     }
 
     public static void saveConfig() {
@@ -102,11 +117,14 @@ public class AutomeowClient implements ClientModInitializer {
             CONFIG.chroma = CHROMA_WANTED.get();
             CONFIG.replyText = REPLY_TEXT;
             CONFIG.appendFace = APPEND_FACE.get();
+            CONFIG.playSound = PLAY_SOUND.get();
+            CONFIG.heartsEffect = HEARTS_EFFECT.get();
             Files.writeString(
                     CONFIG_PATH, GSON.toJson(CONFIG),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
             );
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private static ClientWorld lastWorld = null;
@@ -118,6 +136,7 @@ public class AutomeowClient implements ClientModInitializer {
         FabricLoader fl = FabricLoader.getInstance();
         return fl.isModLoaded("aaron-mod") || fl.isModLoaded("azureaaron"); // cover both ids
     }
+
 
     public static boolean aaronChromaAvailable() {
         if (!hasAaronMod()) return false;
@@ -131,8 +150,6 @@ public class AutomeowClient implements ClientModInitializer {
         }
     }
 
-
-
     // [AutoMeow] Prefix
     private static MutableText badge() {
         boolean chroma = CHROMA_WANTED.get() && aaronChromaAvailable();
@@ -140,7 +157,7 @@ public class AutomeowClient implements ClientModInitializer {
         MutableText name = Text.literal("AutoMeow")
                 .styled(s -> s.withBold(false)
                         // Aaron-mods chroma shader, if not installed then default to pastel pink
-                        .withColor(TextColor.fromRgb( chroma ? AARON_CHROMA_SENTINEL : PASTEL_PINK)));
+                        .withColor(TextColor.fromRgb(chroma ? AARON_CHROMA_SENTINEL : PASTEL_PINK)));
 
         return Text.literal("[").formatted(Formatting.GRAY)
                 .append(name)
@@ -154,12 +171,71 @@ public class AutomeowClient implements ClientModInitializer {
         return badge().append(state);
     }
 
+    // Plays a cat meow and spawns heart particles around the given player (client-side only).
+    private static void triggerCatCueAt(PlayerEntity target) {
+        final MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.world == null || target == null) return;
+
+        if (PLAY_SOUND.get()) {
+            mc.world.playSound(target, target.getX(), target.getY(), target.getZ(),
+                    SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.PLAYERS, 0.8f, 1.0f);
+        }
+
+        if (HEARTS_EFFECT.get()) {
+            var r = mc.world.getRandom();
+            for (int i = 0; i < 6; i++) {
+                double dx = (r.nextDouble() - 0.5) * 0.6;
+                double dz = (r.nextDouble() - 0.5) * 0.6;
+                double dy = 1.6 + r.nextDouble() * 0.4;
+
+                mc.particleManager.addParticle(
+                        ParticleTypes.HEART,
+                        target.getX() + dx, target.getY() + dy, target.getZ() + dz,
+                        0.0, 0.02, 0.0
+                );
+            }
+        }
+    }
+
+    // Try to resolve who sent this chat line.
+    // 1) If the event gives us a sender, use it.
+    // 2) Otherwise, find any world player whose name appears in the raw chat text,
+    // prefer the nearest one to reduce false positives.
+    private static PlayerEntity resolveSender(MinecraftClient mc, GameProfile sender, String raw) {
+        if (mc.world == null) return null;
+
+        if (sender != null) {
+            PlayerEntity p = mc.world.getPlayerByUuid(sender.getId());
+            if (p != null) return p;
+        }
+        if (raw == null || raw.isEmpty()) return null;
+
+        String line = raw.toLowerCase(java.util.Locale.ROOT);
+        PlayerEntity best = null;
+        double bestDist = Double.MAX_VALUE;
+
+        for (PlayerEntity p : mc.world.getPlayers()) {
+            String name = p.getGameProfile().getName();
+            if (name == null) continue;
+
+            if (line.contains(name.toLowerCase(java.util.Locale.ROOT))) {
+                double d = (mc.player != null) ? p.squaredDistanceTo(mc.player) : 0.0;
+                if (best == null || d < bestDist) {
+                    best = p;
+                    bestDist = d;
+                }
+            }
+        }
+        return best;
+    }
+
+
     // Custom reply text (what we send). Default: "meow".
     public static volatile String REPLY_TEXT = "meow";
 
-    // Allow replies that contain "mer" anywhere (case-insensitive), e.g., merp/meraow/merps.
+    // Allow replies that contain "mer" anywhere (case-insensitive), e.g., merp/meraow/merps/nya/~.
     private static final Pattern CAT_SOUND = Pattern.compile(
-            "(mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
+            "(m+e+o+w|mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -187,6 +263,13 @@ public class AutomeowClient implements ClientModInitializer {
             }
             if (!skipNextOwnIncrement.getAndSet(false)) {
                 myMsgsSinceReply.incrementAndGet();
+            }
+            // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
+            if (CAT_SOUND.matcher(msg).find()) {
+                MinecraftClient mcc = MinecraftClient.getInstance();
+                if (mcc.player != null) {
+                    mcc.execute(() -> triggerCatCueAt(mcc.player));
+                }
             }
         });
 
@@ -256,14 +339,22 @@ public class AutomeowClient implements ClientModInitializer {
                                                         .formatted(on ? Formatting.GREEN : Formatting.RED)));
                                         return on ? 1 : 0;
                                     })
-                                    .then(literal("on").executes(ctx -> { APPEND_FACE.set(true);  saveConfig();
+                                    .then(literal("on").executes(ctx -> {
+                                        APPEND_FACE.set(true);
+                                        saveConfig();
                                         ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 ON").formatted(Formatting.GREEN)));
-                                        return 1; }))
-                                    .then(literal("off").executes(ctx -> { APPEND_FACE.set(false); saveConfig();
+                                        return 1;
+                                    }))
+                                    .then(literal("off").executes(ctx -> {
+                                        APPEND_FACE.set(false);
+                                        saveConfig();
                                         ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 OFF").formatted(Formatting.RED)));
-                                        return 1; }))
+                                        return 1;
+                                    }))
                                     .then(literal("toggle").executes(ctx -> {
-                                        boolean nv = !APPEND_FACE.get(); APPEND_FACE.set(nv); saveConfig();
+                                        boolean nv = !APPEND_FACE.get();
+                                        APPEND_FACE.set(nv);
+                                        saveConfig();
                                         ctx.getSource().sendFeedback(badge().append(Text.literal(" :3 " + (nv ? "ON" : "OFF"))
                                                 .formatted(nv ? Formatting.GREEN : Formatting.RED)));
                                         return nv ? 1 : 0;
@@ -305,13 +396,28 @@ public class AutomeowClient implements ClientModInitializer {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null) return;
 
-        long now = System.currentTimeMillis();
-        if (now < quietUntil.get()) return; // ignore immediate echoes
-
+        // Get the plain string once
         String raw = message.getString();
-        if (raw == null || !MEOW.matcher(raw).find()) return;
+        if (raw == null) return;
 
-        // Ignore our own lines (when servers echo them with a sender)
+        // If this line looks like a cat sound, try to show SFX/VFX at the speaker
+        if (CAT_SOUND.matcher(raw).find()) {
+            PlayerEntity src = resolveSender(mc, sender, raw);
+            if (src != null) {
+                // don’t double-play for our own echo
+                UUID me = mc.getSession().getUuidOrNull();
+                if (me == null || !me.equals(src.getUuid())) {
+                    mc.execute(() -> triggerCatCueAt(src));
+                }
+            }
+        }
+
+        long now = System.currentTimeMillis();
+        if (now < quietUntil.get()) return;
+
+        if (!MEOW.matcher(raw).find()) return;
+
+        // ignore our own lines if the server echoes them with a sender
         UUID me = mc.getSession().getUuidOrNull();
         if (sender != null && me != null && me.equals(sender.getId())) return;
 
@@ -319,11 +425,15 @@ public class AutomeowClient implements ClientModInitializer {
 
         mc.execute(() -> {
             if (mc.player != null && mc.player.networkHandler != null) {
-                skipNextOwnIncrement.set(true); // dont count only reply
-                String out = AutomeowClient.REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
+                skipNextOwnIncrement.set(true);
+                String out = REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
                 mc.player.networkHandler.sendChatMessage(out);
+
+                // cue at us when we reply
+                triggerCatCueAt(mc.player);
+
                 quietUntil.set(System.currentTimeMillis() + QUIET_AFTER_SEND_MS);
-                myMsgsSinceReply.set(0); // require 3 of OWN msgs before next auto-reply (I was checking all before)
+                myMsgsSinceReply.set(0);
             }
         });
     }

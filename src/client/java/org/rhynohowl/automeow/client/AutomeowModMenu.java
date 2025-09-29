@@ -16,7 +16,7 @@ public class AutomeowModMenu implements ModMenuApi {
 
     // same pattern your client uses
     private static final Pattern CAT_SOUND = Pattern.compile(
-            "(mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
+            "(m+e+o+w|mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
             Pattern.CASE_INSENSITIVE
     );
 
@@ -106,6 +106,24 @@ public class AutomeowModMenu implements ModMenuApi {
                                     AutomeowClient.saveConfig();
                                 }
                             })
+                            .build()
+            );
+
+            // Play meow sound
+            general.addEntry(
+                    eb.startBooleanToggle(Text.literal("Play meow sound"), AutomeowClient.PLAY_SOUND.get())
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { AutomeowClient.PLAY_SOUND.set(val); AutomeowClient.saveConfig(); })
+                            .setTooltip(Text.literal("Plays a cat meow when someone says a cat-sound (you or others)."))
+                            .build()
+            );
+
+            // Show heart particles
+            general.addEntry(
+                    eb.startBooleanToggle(Text.literal("Show heart particles"), AutomeowClient.HEARTS_EFFECT.get())
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { AutomeowClient.HEARTS_EFFECT.set(val); AutomeowClient.saveConfig(); })
+                            .setTooltip(Text.literal("Spawns the hearts effect around the player who meowed."))
                             .build()
             );
 
