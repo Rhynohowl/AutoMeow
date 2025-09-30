@@ -105,18 +105,24 @@ public class AutomeowClient implements ClientModInitializer {
     private static Config CONFIG = new Config();
 
     // Compare dotted numbers like "1.9.2" vs "1.10"
-    private static int cmpVer(String a, String b) {
-        String[] aa = a.split("\\D+");
+    private static int compareVersion(String a, String b) {
+        String[] aa = a.split("\\D+"); // check non digits
         String[] bb = b.split("\\D+");
         int n = Math.max(aa.length, bb.length);
         for (int i = 0; i < n; i++) {
             int x = i < aa.length ? parseOrZero(aa[i]) : 0;
             int y = i < bb.length ? parseOrZero(bb[i]) : 0;
-            if (x != y) return Integer.compare(x, y);
+            if (x != y) return Integer.compare(x, y); // >0 if a>b | <0 if a<b
         }
         return 0;
     }
-    private static int parseOrZero(String s) { try { return Integer.parseInt(s); } catch (Exception e) { return 0; } }
+    private static int parseOrZero(String s) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 
     private static String currentModVersion() {
         return FabricLoader.getInstance()
@@ -168,7 +174,7 @@ public class AutomeowClient implements ClientModInitializer {
                             }
                         }
                         if (bestVer == null) return;
-                        if (cmpVer(bestVer, cur) > 0) {
+                        if (compareVersion(bestVer, cur) > 0) {
                             final String latest = bestVer;
                             final String dlUrl  = bestUrl;
 
