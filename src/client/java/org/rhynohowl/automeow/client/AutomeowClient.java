@@ -132,6 +132,7 @@ public class AutomeowClient implements ClientModInitializer {
     }
 
 
+
     private static void checkForUpdateAsync() {
         final String cur = currentModVersion();
 
