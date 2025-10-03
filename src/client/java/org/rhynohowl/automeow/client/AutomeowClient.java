@@ -88,6 +88,10 @@ public class AutomeowClient implements ClientModInitializer {
         boolean appendFace = false;
         boolean playSound = true;
         boolean heartsEffect = true;
+        float baseVolume    = 0.8f;
+        float basePitch     = 1.0f;
+        float volumeJitter  = 0.15f;
+        float pitchJitter   = 0.10f;
     }
 
     private static HpChannel detectHpChan(String raw) {
@@ -131,6 +135,13 @@ public class AutomeowClient implements ClientModInitializer {
                 .orElse("0");
     }
 
+    private static float clampf(float v, float min, float max) { // I HATE MATH MY FRIEND HELPED ME WITH THE MATH :C
+        return Math.max(min, Math.min(max, v));
+    }
+    private static float jitterAround(float base, float jitterFraction, net.minecraft.util.math.random.Random r) {
+        float j = (r.nextFloat() * 2f - 1f) * jitterFraction;
+        return base * (1f + j);
+    }
 
 
     private static void checkForUpdateAsync() {
@@ -308,14 +319,17 @@ public class AutomeowClient implements ClientModInitializer {
         if (mc.world == null || target == null) return;
 
         if (PLAY_SOUND.get()) {
+            var r = mc.world.getRandom();
+            float vol = clampf(jitterAround(CONFIG.baseVolume, CONFIG.volumeJitter, r), 0.0f, 2.0f);
+            float pitch = clampf(jitterAround(CONFIG.baseVolume, CONFIG.pitchJitter, r), 0.5f, 2.0f);
             mc.world.playSound(target, target.getX(), target.getY(), target.getZ(),
-                    SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.PLAYERS, 0.8f, 1.0f);
+                    SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.PLAYERS, vol, pitch);
         }
 
         if (HEARTS_EFFECT.get()) {
             var r = mc.world.getRandom();
             for (int i = 0; i < 6; i++) {
-                double dx = (r.nextDouble() - 0.5) * 0.6;
+                double dx = (r.nextDouble() - 0.5) * 0.6; //DISCAIMER!! FRIEND DID THIS SHIT ASWELL
                 double dz = (r.nextDouble() - 0.5) * 0.6;
                 double dy = 1.6 + r.nextDouble() * 0.4;
 
