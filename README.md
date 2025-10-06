@@ -7,23 +7,23 @@ Built for **Minecraft 1.21.5**. Works on vanilla servers (no server mod needed).
 
 ## Features
 
-- 🐱 Auto-reply **“meow”** when “meow” appears in chat (case-insensitive, whole word).
-- 🔁 **No ping-pong/loopbacks** – quiet window after sending and after you type “meow”.
-- ✋ **Your-message cooldown** – replies only after **you** have sent **3** messages since the last auto-reply.
-- 🔄 **Lobby/world reset** – cooldown resets when you change world/hub.
-- 🟢 **Toggleable** at runtime with a pretty badge.
-- 💾 **Persistent settings** saved to `config/automeow.json`.
-- 🌈 Optional **chroma badge** integration with **Aaron-mod**’s chroma text pack (off by default).
+- Auto-reply **“meow”** when “meow” appears in chat (case-insensitive, whole word).
+- **No ping-pong/loopbacks** – quiet window after sending and after you type “meow”.
+- **Your-message cooldown** – replies only after **you** have sent **3** messages since the last auto-reply.
+- **Lobby/world reset** – cooldown resets when you change world/hub.
+- **Toggleable** at runtime with a pretty badge.
+- **Persistent settings** saved to `config/automeow.json`.
+- Optional **chroma badge** integration with **Aaron-mod**’s chroma text pack (off by default).
 
 ---
 
 ## Commands
 
-/automeow # show current status
-/automeow toggle # enable/disable
-/automeow on # enable
-/automeow off # disable
-/automeow chroma # toggle chroma badge (requires Aaron-mod + chroma_text pack)
+/automeow | show current status
+/automeow toggle | enable/disable
+/automeow on | enable
+/automeow off | disable
+/automeow chroma | toggle chroma badge (requires Aaron-mod + chroma_text pack)
 
 > The very first “meow” after joining or changing lobby is answered instantly;  
 > after that, AutoMeow waits until **you** have chatted **3** more times.
