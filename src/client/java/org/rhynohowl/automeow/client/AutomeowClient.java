@@ -73,11 +73,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Path CONFIG_PATH;
 
-    private enum HpChannel { ALL, GUILD, PARTY }
-
-    private static final java.util.regex.Pattern HP_PREFIX =
-            java.util.regex.Pattern.compile("^(Party|Guild)\\s*>\\s*", java.util.regex.Pattern.CASE_INSENSITIVE);
-
+    private enum HpChannel { ALL, GUILD, PARTY, COOP }
 
     // Toggles
 
@@ -94,14 +90,20 @@ public class AutomeowClient implements ClientModInitializer {
         float pitchJitter   = 0.10f;
     }
 
+    private static final java.util.regex.Pattern LEADING_WORD =
+            java.util.regex.Pattern.compile("^\\s*([A-Za-z]+(?:[-\\p{Pd}][A-Za-z]+)?)");
+
     private static HpChannel detectHpChan(String raw) {
         if (raw == null) return HpChannel.ALL;
-        String s = raw.stripLeading();
-        var m = HP_PREFIX.matcher(s);
+        String s = raw.replaceAll("§.", "");
+        s = s.replaceAll("\\p{Pd}", "-");
+        var m = LEADING_WORD.matcher(s);
         if (!m.find()) return HpChannel.ALL;
-        switch (m.group(1).toLowerCase(java.util.Locale.ROOT)) {
+        String norm = m.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]", "");
+        switch (norm) {
             case "party":   return HpChannel.PARTY;
             case "guild":   return HpChannel.GUILD;
+            case "coop":   return HpChannel.COOP;
             default:        return HpChannel.ALL;
         }
     }
@@ -274,6 +276,11 @@ public class AutomeowClient implements ClientModInitializer {
     // Match whole word "meow" (not case-sensitive)
     private static final Pattern MEOW = Pattern.compile("\\bmeow\\b", Pattern.CASE_INSENSITIVE);
 
+    // can see meows in chats other than all chat hopefully
+    private static final Pattern ROUNDED_CHAT_CMD =
+            Pattern.compile("^(?:/?)(?:pc|partychat|gc|guildchat|cc|coopchat)\\s+(.+)$",
+                    Pattern.CASE_INSENSITIVE);
+
     private static boolean hasAaronMod() {
         FabricLoader fl = FabricLoader.getInstance();
         return fl.isModLoaded("aaron-mod") || fl.isModLoaded("azureaaron"); // cover both ids
@@ -355,7 +362,7 @@ public class AutomeowClient implements ClientModInitializer {
         }
         if (raw == null || raw.isEmpty()) return null;
 
-        String line = raw.toLowerCase(java.util.Locale.ROOT);
+        String line = raw.replaceAll("§.", "").toLowerCase(java.util.Locale.ROOT);
         PlayerEntity best = null;
         double bestDist = Double.MAX_VALUE;
 
@@ -401,7 +408,7 @@ public class AutomeowClient implements ClientModInitializer {
         ClientLifecycleEvents.CLIENT_STOPPING.register(client -> saveConfig());
         // Count outgoing messages YOU type; start a quiet window if you typed "meow"
         ClientSendMessageEvents.CHAT.register(msg -> {
-            if (msg == null || msg.startsWith("/")) return;
+            if (msg == null) return;
             if (MEOW.matcher(msg).find()) {
                 long now = System.currentTimeMillis();
                 quietUntil.set(now + QUIET_AFTER_SEND_MS);
@@ -412,6 +419,32 @@ public class AutomeowClient implements ClientModInitializer {
             }
             // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
             if (CAT_SOUND.matcher(msg).find()) {
+                MinecraftClient mcc = MinecraftClient.getInstance();
+                if (mcc.player != null) {
+                    mcc.execute(() -> triggerCatCueAt(mcc.player));
+                }
+            }
+        });
+        ClientSendMessageEvents.COMMAND.register(cmd -> {
+            if (cmd == null) return;
+
+            String raw = cmd.startsWith("/") ? cmd.substring(1) : cmd;
+            var m = ROUNDED_CHAT_CMD.matcher(raw);
+            if (!m.find()) return;
+
+            String payload = m.group(1).trim();
+            if (payload.isEmpty()) return;
+
+            if (MEOW.matcher(payload).find()) {
+                long now = System.currentTimeMillis();
+                quietUntil.set(now + QUIET_AFTER_SEND_MS);
+                myMsgsSinceReply.set(0);
+                }
+            if (!skipNextOwnIncrement.getAndSet(false)) {
+                myMsgsSinceReply.incrementAndGet();
+            }
+
+            if (CAT_SOUND.matcher(payload).find()) {
                 MinecraftClient mcc = MinecraftClient.getInstance();
                 if (mcc.player != null) {
                     mcc.execute(() -> triggerCatCueAt(mcc.player));
@@ -613,6 +646,7 @@ public class AutomeowClient implements ClientModInitializer {
                 String toSend = switch (detectHpChan(raw)) {
                     case GUILD -> "/gc " + out;
                     case PARTY -> "/pc " + out;
+                    case COOP  -> "/cc " + out;
                     default -> out;
                 };
                 mc.player.networkHandler.sendChatMessage(toSend);
