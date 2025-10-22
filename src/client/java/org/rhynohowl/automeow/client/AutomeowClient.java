@@ -350,7 +350,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (mc.world == null) return null;
 
         if (sender != null) {
-            PlayerEntity p = mc.world.getPlayerByUuid(sender.getId());
+            PlayerEntity p = mc.world.getPlayerByUuid(sender.id());
             if (p != null) return p;
         }
         if (raw == null || raw.isEmpty()) return null;
@@ -360,7 +360,7 @@ public class AutomeowClient implements ClientModInitializer {
         double bestDist = Double.MAX_VALUE;
 
         for (PlayerEntity p : mc.world.getPlayers()) {
-            String name = p.getGameProfile().getName();
+            String name = p.getGameProfile().name();
             if (name == null) continue;
 
             if (line.contains(name.toLowerCase(java.util.Locale.ROOT))) {
@@ -601,7 +601,7 @@ public class AutomeowClient implements ClientModInitializer {
 
         // ignore our own lines (when CHAT provides a sender)
         UUID me = mc.getSession().getUuidOrNull();
-        if (sender != null && me != null && me.equals(sender.getId())) return;
+        if (sender != null && me != null && me.equals(sender.id())) return;
 
         if (myMsgsSinceReply.get() < MY_MESSAGES_REQUIRED) return;
 
