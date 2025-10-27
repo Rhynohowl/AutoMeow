@@ -8,12 +8,12 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import java.lang.reflect.Method;
+
+import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
 import net.minecraft.text.Text;
-import java.time.Instant;
+
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -145,9 +145,17 @@ public class AutomeowClient implements ClientModInitializer {
         return base * (1f + j);
     }
 
+    private static boolean arrContainsString(JsonObject obj, String field, String wanted) {
+        if (!obj.has(field) || !obj.get(field).isJsonArray()) return false;
+        for (var el : obj.getAsJsonArray(field)) {
+            if (el.isJsonPrimitive() && wanted.equalsIgnoreCase(el.getAsString())) return true;
+        }
+        return false;
+    }
 
     private static void checkForUpdateAsync() {
-        final String cur = currentModVersion();
+        final String currentModVer = currentModVersion();
+        final String currentMcVer = MinecraftClient.getInstance().getGameVersion();
 
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
@@ -157,7 +165,7 @@ public class AutomeowClient implements ClientModInitializer {
         String url = "https://api.modrinth.com/v2/project/" + MODRINTH_SLUG + "/version";
 
         HttpRequest req = HttpRequest.newBuilder(URI.create(url))
-                .header("User-Agent", "AutoMeow/" + cur + " (Modrinth update check)")
+                .header("User-Agent", "AutoMeow/" + currentModVer + " (MC " + currentMcVer + "; Modrinth update check)")
                 .timeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
                 .build();
 
@@ -178,6 +186,8 @@ public class AutomeowClient implements ClientModInitializer {
                             String type = v.has("version_type") ? v.get("version_type").getAsString() : "release";
                             if (!"release".equalsIgnoreCase(type)) continue;
 
+                            if (!arrContainsString(v, "game_versions", currentMcVer)) continue;
+
                             String ver = v.get("version_number").getAsString();
                             java.time.Instant published = java.time.Instant.parse(v.get("date_published").getAsString());
 
@@ -188,14 +198,14 @@ public class AutomeowClient implements ClientModInitializer {
                             }
                         }
                         if (bestVer == null) return;
-                        if (compareVersion(bestVer, cur) > 0) {
+                        if (compareVersion(bestVer, currentModVer) > 0) {
                             final String latest = bestVer;
                             final String dlUrl  = bestUrl;
 
                             // Clientside hyperlink
                             MinecraftClient mc = MinecraftClient.getInstance();
                             if (mc != null) {
-                                mc.execute(() -> {
+                                Runnable  showUpdate = () -> mc.execute(() -> {
                                     var link = Text.literal("Download update")
                                             .setStyle(
                                                     Style.EMPTY
@@ -207,11 +217,14 @@ public class AutomeowClient implements ClientModInitializer {
 
                                     var msg = badge()
                                             .append(Text.literal(" Update available ").formatted(Formatting.YELLOW))
-                                            .append(Text.literal("(v" + cur + " → v" + latest + ") ").formatted(Formatting.GRAY))
+                                            .append(Text.literal("(MC " + currentMcVer + ", v" + currentModVer + " → v" + latest + ") ").formatted(Formatting.GRAY))
                                             .append(link);
 
                                     mc.inGameHud.getChatHud().addMessage(msg); // local only
                                 });
+                                java.util.concurrent.CompletableFuture
+                                        .delayedExecutor(15, java.util.concurrent.TimeUnit.SECONDS)
+                                        .execute(showUpdate);
                             }
                         }
                     } catch (Throwable ignored) { /* swallow quietly */ }
