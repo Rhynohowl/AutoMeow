@@ -74,7 +74,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
-          name: "AutoMeow ${{ steps.ver.outputs.version }}"
+          name: "AutoMeow 1.21.5 ${{ steps.ver.outputs.version }}"
           generate_release_notes: true
           files: ${{ steps.jar.outputs.jar }}
         env:
