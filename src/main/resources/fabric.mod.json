@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "automeow",
   "version": "1.11",
-  "name": "AutoMeow",
+  "name": "AutoMeow 1.21.5",
   "description": "Automatically replies \"meow\" when someone says \"meow\" in chat.",
   "authors": ["Rhynohowl"],
   "environment": "client",
