@@ -8,12 +8,10 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import java.lang.reflect.Method;
-
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.text.Text;
-
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -56,6 +54,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static final int AARON_CHROMA_SENTINEL = 0xAA5500;
     public static final java.util.concurrent.atomic.AtomicBoolean PLAY_SOUND = new java.util.concurrent.atomic.AtomicBoolean(true);
     public static final java.util.concurrent.atomic.AtomicBoolean HEARTS_EFFECT = new java.util.concurrent.atomic.AtomicBoolean(true);
+    public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
 
     // Modrinth
     private static final String MODRINTH_SLUG = "automeow"; // your Modrinth project slug
@@ -63,10 +62,23 @@ public class AutomeowClient implements ClientModInitializer {
 
     // State
     public static final AtomicBoolean ENABLED = new AtomicBoolean(true);
-    private static final AtomicInteger myMsgsSinceReply = new AtomicInteger(MY_MESSAGES_REQUIRED); // start "ready"
     private static final AtomicLong quietUntil = new AtomicLong(0);
     private static final AtomicBoolean skipNextOwnIncrement = new AtomicBoolean(false);
     public static final java.util.concurrent.atomic.AtomicBoolean APPEND_FACE = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+    private static final java.util.EnumMap<HpChannel, AtomicInteger> msgsSinceReply =
+            new java.util.EnumMap<>(HpChannel.class);
+
+    static {
+        for (HpChannel ch : HpChannel.values()) {
+            msgsSinceReply.put(ch, new AtomicInteger(MY_MESSAGES_REQUIRED)); // start "ready"
+        }
+    }
+
+    private static AtomicInteger counter(HpChannel ch) {
+        return msgsSinceReply.get(ch);
+    }
+
 
 
     // Config state
@@ -85,7 +97,6 @@ public class AutomeowClient implements ClientModInitializer {
         boolean playSound = true;
         boolean heartsEffect = true;
         float baseVolume    = 0.8f;
-        float basePitch     = 1.0f;
         float volumeJitter  = 0.15f;
         float pitchJitter   = 0.10f;
     }
@@ -103,7 +114,7 @@ public class AutomeowClient implements ClientModInitializer {
         switch (norm) {
             case "party":   return HpChannel.PARTY;
             case "guild":   return HpChannel.GUILD;
-            case "coop":   return HpChannel.COOP;
+            case "coop":    return HpChannel.COOP;
             default:        return HpChannel.ALL;
         }
     }
@@ -128,6 +139,19 @@ public class AutomeowClient implements ClientModInitializer {
         } catch (Exception e) {
             return 0;
         }
+    }
+
+    private static void debug(String msg) {
+        if (!DEBUG.get()) return;
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc == null) return;
+        mc.execute(() -> {
+            if (mc.inGameHud != null) {
+                mc.inGameHud.getChatHud().addMessage(
+                        badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY))
+                );
+            }
+        });
     }
 
     private static String currentModVersion() {
@@ -291,7 +315,7 @@ public class AutomeowClient implements ClientModInitializer {
 
     // can see meows in chats other than all chat hopefully
     private static final Pattern ROUNDED_CHAT_CMD =
-            Pattern.compile("^(?:/?)(?:pc|partychat|gc|guildchat|cc|coopchat)\\s+(.+)$",
+            Pattern.compile("^(?:/?)(?:ac|allchat|pc|partychat|gc|guildchat|cc|coopchat)\\s+(.+)$",
                     Pattern.CASE_INSENSITIVE);
 
     private static boolean hasAaronMod() {
@@ -327,10 +351,14 @@ public class AutomeowClient implements ClientModInitializer {
                 .append(Text.literal(" "));
     }
 
-    private static MutableText statusLine(boolean enabled, int have, int need) {
+    private static MutableText statusLine(boolean enabled) {
         MutableText state = Text.literal(enabled ? "ON" : "OFF")
                 .formatted(enabled ? Formatting.GREEN : Formatting.RED);
-        return badge().append(state);
+        return badge()
+                .append(state)
+                .append(Text.literal(" | ALL " + counter(HpChannel.ALL).get() +"/" + MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
+                .append(Text.literal(" G " + counter(HpChannel.GUILD).get() + "/" + MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
+                .append(Text.literal(" C " + counter(HpChannel.COOP).get() + "/" + MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY));
     }
 
     // Plays a cat meow and spawns heart particles around the given player (client-side only).
@@ -422,13 +450,9 @@ public class AutomeowClient implements ClientModInitializer {
         // Count outgoing messages YOU type; start a quiet window if you typed "meow"
         ClientSendMessageEvents.CHAT.register(msg -> {
             if (msg == null) return;
+
             if (MEOW.matcher(msg).find()) {
-                long now = System.currentTimeMillis();
-                quietUntil.set(now + QUIET_AFTER_SEND_MS);
-                myMsgsSinceReply.set(0); // after meow, require 3 of OWN msgs before next autoreply
-            }
-            if (!skipNextOwnIncrement.getAndSet(false)) {
-                myMsgsSinceReply.incrementAndGet();
+                quietUntil.set(System.currentTimeMillis() + QUIET_AFTER_SEND_MS);
             }
             // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
             if (CAT_SOUND.matcher(msg).find()) {
@@ -441,21 +465,22 @@ public class AutomeowClient implements ClientModInitializer {
         ClientSendMessageEvents.COMMAND.register(cmd -> {
             if (cmd == null) return;
 
-            String raw = cmd.startsWith("/") ? cmd.substring(1) : cmd;
-            var m = ROUNDED_CHAT_CMD.matcher(raw);
-            if (!m.find()) return;
+            String rawCmd = cmd.startsWith("/") ? cmd.substring(1) : cmd;
+            String head = rawCmd.split("\\s+", 2)[0].toLowerCase(java.util.Locale.ROOT);
 
-            String payload = m.group(1).trim();
+            if (!(head.equals("pc") || head.equals("partychat") ||
+                    head.equals("gc") || head.equals("guildchat") ||
+                    head.equals("cc") || head.equals("coopchat") ||
+                    head.equals("ac") || head.equals("allchat"))) {
+                return;
+            }
+
+            String payload = rawCmd.substring(head.length()).trim();
             if (payload.isEmpty()) return;
 
             if (MEOW.matcher(payload).find()) {
-                long now = System.currentTimeMillis();
-                quietUntil.set(now + QUIET_AFTER_SEND_MS);
-                myMsgsSinceReply.set(0);
+                quietUntil.set(System.currentTimeMillis() + QUIET_AFTER_SEND_MS);
                 }
-            if (!skipNextOwnIncrement.getAndSet(false)) {
-                myMsgsSinceReply.incrementAndGet();
-            }
 
             if (CAT_SOUND.matcher(payload).find()) {
                 MinecraftClient mcc = MinecraftClient.getInstance();
@@ -467,17 +492,23 @@ public class AutomeowClient implements ClientModInitializer {
 
         // React to incoming chat
         ClientReceiveMessageEvents.CHAT.register(
-                (message, signedMessage, sender, params, ts) -> handleIncoming(message, sender)
+                (message, signedMessage, sender, params, ts) -> {
+                    Text decorated = params.applyChatDecoration(message);
+                    MinecraftClient.getInstance().execute(() -> handleIncoming(decorated, sender));
+                }
         );
-        ClientReceiveMessageEvents.GAME.register(
-                (message, overlay) -> handleIncoming(message, null) // GAME/system has no sender
-        );
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+            if (overlay) return;
+            MinecraftClient.getInstance().execute(() -> handleIncoming(message, null));
+                });
 
         // Reset counter on lobby/world change
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world != lastWorld) {
                 lastWorld = client.world;
-                myMsgsSinceReply.set(MY_MESSAGES_REQUIRED); // first meow in new lobby replies instantly
+                for (HpChannel ch : HpChannel.values()) {
+                    counter(ch).set(MY_MESSAGES_REQUIRED);
+                }
             }
         });
 
@@ -487,26 +518,26 @@ public class AutomeowClient implements ClientModInitializer {
                     literal("automeow")
                             .executes(ctx -> {
                                 boolean on = ENABLED.get();
-                                ctx.getSource().sendFeedback(statusLine(on, myMsgsSinceReply.get(), MY_MESSAGES_REQUIRED));
+                                ctx.getSource().sendFeedback(statusLine(on));
                                 return on ? 1 : 0;
                             })
                             .then(literal("toggle").executes(ctx -> {
                                 boolean newValue = !ENABLED.get();
                                 ENABLED.set(newValue);
                                 saveConfig();
-                                ctx.getSource().sendFeedback(statusLine(newValue, myMsgsSinceReply.get(), MY_MESSAGES_REQUIRED));
+                                ctx.getSource().sendFeedback(statusLine(newValue));
                                 return newValue ? 1 : 0;
                             }))
                             .then(literal("on").executes(ctx -> {
                                 ENABLED.set(true);
                                 saveConfig();
-                                ctx.getSource().sendFeedback(statusLine(true, myMsgsSinceReply.get(), MY_MESSAGES_REQUIRED));
+                                ctx.getSource().sendFeedback(statusLine(true));
                                 return 1;
                             }))
                             .then(literal("off").executes(ctx -> {
                                 ENABLED.set(false);
                                 saveConfig();
-                                ctx.getSource().sendFeedback(statusLine(false, myMsgsSinceReply.get(), MY_MESSAGES_REQUIRED));
+                                ctx.getSource().sendFeedback(statusLine(false));
                                 return 1;
                             }))
                             .then(literal("chroma").executes(ctx -> {
@@ -526,6 +557,15 @@ public class AutomeowClient implements ClientModInitializer {
                                 ctx.getSource().sendFeedback(badge()
                                         .append(Text.literal("Chroma " + (newValue ? "ON" : "OFF"))
                                                 .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                return newValue ? 1 : 0;
+                            }))
+                            .then(literal("debug").executes(ctx -> {
+                                boolean newValue = !DEBUG.get();
+                                DEBUG.set(newValue);
+                                ctx.getSource().sendFeedback(
+                                        badge().append(Text.literal("Debug " + (newValue ? "ON" : "OFF"))
+                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED))
+                                );
                                 return newValue ? 1 : 0;
                             }))
                             .then(literal("hearts")
@@ -622,13 +662,13 @@ public class AutomeowClient implements ClientModInitializer {
     }
 
     private void handleIncoming(Text message, GameProfile sender) {
-        if (!ENABLED.get()) return;
+        if (!ENABLED.get()) { debug("blocked: disabled"); return; }
 
         MinecraftClient mc = MinecraftClient.getInstance();
-        if (mc.player == null) return;
+        if (mc.player == null) { debug("blocked: no player"); return; }
 
         String raw = message.getString();
-        if (raw == null) return;
+        if (raw == null) { debug("blocked: raw null"); return; }
 
         // play SFX at play who meows & self
         if (CAT_SOUND.matcher(raw).find()) {
@@ -641,32 +681,83 @@ public class AutomeowClient implements ClientModInitializer {
             }
         }
 
+        HpChannel ch = detectHpChan(raw);
+
+        UUID meUUID = mc.getSession().getUuidOrNull();
+        String myName = mc.player.getGameProfile().name();
+        String clean = raw.replaceAll("§.", "");
+
+        boolean isMe =
+                (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
+                (myName != null && clean.contains(myName + ":"));
+
+        if (isMe) {
+            if (skipNextOwnIncrement.getAndSet(false)) {
+                debug("own echo skipped");
+                return;
+            }
+
+            if (MEOW.matcher(clean).find()) {
+                if (ch != HpChannel.PARTY) counter(ch).set(0);
+                debug("own meow, reset counter chan=" + ch);
+                return;
+            }
+            if (ch != HpChannel.PARTY) {
+                counter(ch).incrementAndGet();
+                debug("own msg -> " + ch + " = " + counter(ch).get());
+            }
+            return;
+        }
+
         long now = System.currentTimeMillis();
-        if (now < quietUntil.get()) return;
-        if (!MEOW.matcher(raw).find()) return;
+        if (now < quietUntil.get()) {
+            debug("blocked: quiet (" + (quietUntil.get() - now) + "ms left)");
+            return;
+        }
+
+        if (!MEOW.matcher(raw).find()) {
+            debug("ignored: no 'meow' in message");
+            return;
+        }
 
         // ignore our own lines (when CHAT provides a sender)
         UUID me = mc.getSession().getUuidOrNull();
-        if (sender != null && me != null && me.equals(sender.id())) return;
+        if (sender != null && me != null && me.equals(sender.id())) {
+            debug("ignored: own message");
+            return;
+        }
 
-        if (myMsgsSinceReply.get() < MY_MESSAGES_REQUIRED) return;
-
-        mc.execute(() -> {
-            if (mc.player != null && mc.player.networkHandler != null) {
-                skipNextOwnIncrement.set(true);
-
-                String out = REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
-                String toSend = switch (detectHpChan(raw)) {
-                    case GUILD -> "/gc " + out;
-                    case PARTY -> "/pc " + out;
-                    case COOP  -> "/cc " + out;
-                    default -> out;
-                };
-                mc.player.networkHandler.sendChatMessage(toSend);
-                triggerCatCueAt(mc.player);
-                quietUntil.set(System.currentTimeMillis() + QUIET_AFTER_SEND_MS);
-                myMsgsSinceReply.set(0);
+        if (ch != HpChannel.PARTY) {
+            int have = counter(ch).get();
+            if (have < MY_MESSAGES_REQUIRED) {
+                debug("blocked: msgsSinceReply=" + have + "/" + MY_MESSAGES_REQUIRED + " (chan=" + ch + ")");
+                return;
             }
-        });
+        }
+
+        debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
+
+        if (mc.player != null && mc.player.networkHandler != null) {
+            skipNextOwnIncrement.set(true);
+
+            String out = REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
+            String toSend = switch (ch) {
+                case GUILD -> "/gc " + out;
+                case PARTY -> "/pc " + out;
+                case COOP  -> "/cc " + out;
+                case ALL -> "/ac " + out;
+            };
+
+            quietUntil.set(System.currentTimeMillis()  + QUIET_AFTER_SEND_MS);
+            debug("sending: " + toSend);
+
+            skipNextOwnIncrement.set(true);
+
+            mc.player.networkHandler.sendChatCommand(toSend.substring(1));
+            triggerCatCueAt(mc.player);
+            if (ch != HpChannel.PARTY) counter(ch).set(0);
+        } else {
+            debug("blocked: no networkHandler");
+        }
     }
 }
