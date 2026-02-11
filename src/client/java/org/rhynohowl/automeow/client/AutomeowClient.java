@@ -111,6 +111,26 @@ public class AutomeowClient implements ClientModInitializer {
                 .trim();
     }
 
+    public static final java.util.List<String> REPLY_PRESETS = java.util.List.of(
+            "meow",
+            "mrrp",
+            "mrow",
+            "mer",
+            "nya",
+            "purr"
+    );
+
+    public static final String DEFAULT_REPLY_TEXT = REPLY_PRESETS.get(0);
+
+    private static String canonicalPresetOrNull(String input) {
+        if (input == null) return null;
+        String trimed = input.trim();
+        for (String option : REPLY_PRESETS) {
+            if (option.equalsIgnoreCase(trimed)) return option;
+        }
+        return null;
+    }
+
     private static void startTimer() {
         long timer = System.currentTimeMillis() + QUIET_AFTER_SEND_MS;
         echoUntil.set(timer);
@@ -293,7 +313,7 @@ public class AutomeowClient implements ClientModInitializer {
 
             // reply text: allow anything from disk; enforce "mer" only on user edits
             if (!setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow", /*fromUser=*/false)) {
-                REPLY_TEXT = "meow";
+                REPLY_TEXT = DEFAULT_REPLY_TEXT;
             }
 
         } catch (Exception ignored) {
@@ -437,7 +457,7 @@ public class AutomeowClient implements ClientModInitializer {
 
 
     // Custom reply text (what we send). Default: "meow".
-    public static volatile String REPLY_TEXT = "meow";
+    public static volatile String REPLY_TEXT = DEFAULT_REPLY_TEXT;
 
     // Allow replies that contain "mer" anywhere (case-insensitive), e.g., merp/meraow/merps/nya/~.
     private static final Pattern CAT_SOUND = Pattern.compile(
@@ -445,13 +465,10 @@ public class AutomeowClient implements ClientModInitializer {
             Pattern.CASE_INSENSITIVE
     );
 
-    // Validate & set. If fromUser=true we enforce the "mer" rule; default load can stay "meow".
-    public static boolean setReplyText(String s, boolean fromUser) {
-        if (s == null) return false;
-        String t = s.trim();
-        if (t.isEmpty() || t.length() > 32) return false;
-        if (fromUser && !CAT_SOUND.matcher(t).find()) return false;
-        REPLY_TEXT = t;
+    public static boolean setReplyText(String requestedText, boolean fromUser) {
+        String canon = canonicalPresetOrNull(requestedText);
+        if (canon == null) return false;
+        REPLY_TEXT = canon;
         return true;
     }
 
@@ -653,27 +670,32 @@ public class AutomeowClient implements ClientModInitializer {
                             )
                             .then(literal("say")
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
-                                            .argument("text", StringArgumentType.greedyString())
+                                            .argument("preset", StringArgumentType.greedyString())
+                                            .suggests((ctx, suggestion) -> {
+                                                for (String opt : REPLY_PRESETS) suggestion.suggest(opt);
+                                                return suggestion.buildFuture();
+                                            })
                                             .executes(ctx -> {
-                                                String wanted = StringArgumentType.getString(ctx, "text");
+                                                String wanted = StringArgumentType.getString(ctx, "preset");
                                                 boolean ok = setReplyText(wanted, true);
+
                                                 if (ok) {
                                                     saveConfig();
                                                     ctx.getSource().sendFeedback(
-                                                            badge().append(Text.literal("reply set to \"" + REPLY_TEXT + "\"").formatted(Formatting.GREEN))
+                                                            badge().append(Text.literal("reply preset set to \"" + REPLY_TEXT + "\"")
+                                                                    .formatted(Formatting.GREEN))
                                                     );
                                                     return 1;
-                                                } else {
-                                                    ctx.getSource().sendFeedback(
-                                                            badge().append(Text.literal("reply must contain a cat sound: mer / mrrp / mrow / nya(a~)")
-                                                                    .formatted(Formatting.RED))
-                                                    );
-                                                    return 0;
                                                 }
+
+                                                ctx.getSource().sendFeedback(
+                                                        badge().append(Text.literal("Invalid preset. Choose one of: " + String.join(", ", REPLY_PRESETS))
+                                                                .formatted(Formatting.RED))
+                                                );
+                                                return 0;
                                             })
                                     )
                             )
-
             );
         });
     }

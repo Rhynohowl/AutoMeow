@@ -6,19 +6,26 @@ import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.impl.builders.DropdownMenuBuilder;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import java.util.LinkedHashSet;
 
-import java.util.regex.Pattern;
+
 
 public class AutomeowModMenu implements ModMenuApi {
 
-    // same pattern your client uses
-    private static final Pattern CAT_SOUND = Pattern.compile(
-            "(m+e+o+w|mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
-            Pattern.CASE_INSENSITIVE
-    );
+    private static String canonicalPresetOrNull(String typed) {
+        if (typed == null) return null;
+        String trimed = typed.trim();
+        if (trimed.isEmpty()) return null;
+
+        for (String option : AutomeowClient.REPLY_PRESETS) {
+            if (option.equalsIgnoreCase(trimed)) return option;
+        }
+        return null;
+    }
 
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
@@ -91,21 +98,24 @@ public class AutomeowModMenu implements ModMenuApi {
                             .build()
             );
 
-
-            // Reply text (must contain "mer")
             general.addEntry(
-                    eb.startStrField(Text.literal("Reply text"), AutomeowClient.REPLY_TEXT)
-                            .setTooltip(Text.literal(
-                                    "What the mod sends back. Must include a cat sound:\n" +
-                                            "mer / mrrp / mrow / nya(a~). Max 32 chars."
-                            ))
-                            .setSaveConsumer(val -> {
-                                String s = val == null ? "" : val.trim();
-                                if (s.length() <= 32 && CAT_SOUND.matcher(s).find()) {
-                                    AutomeowClient.setReplyText(s, /*fromUser=*/true);
-                                    AutomeowClient.saveConfig();
-                                }
-                            })
+                    eb.startDropdownMenu(
+                                    Text.literal("Reply text"),
+                                    DropdownMenuBuilder.TopCellElementBuilder.of(
+                                            AutomeowClient.REPLY_TEXT,
+                                            AutomeowModMenu::canonicalPresetOrNull,
+                                            preset -> Text.literal(preset == null ? "" : preset)
+                                    ),
+                                    DropdownMenuBuilder.CellCreatorBuilder.of(
+                                            14,
+                                            140,
+                                            8,
+                                            preset -> Text.literal(preset == null ? "" : preset)
+                                    )
+                            )
+                            .setSelections(new LinkedHashSet<>(AutomeowClient.REPLY_PRESETS))
+                            .setDefaultValue(AutomeowClient.DEFAULT_REPLY_TEXT)
+                            .setSaveConsumer(v -> AutomeowClient.setReplyText(v, true))
                             .build()
             );
 
