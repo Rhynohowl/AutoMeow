@@ -83,7 +83,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Path CONFIG_PATH;
 
-    private enum HpChannel { ALL, GUILD, PARTY, COOP }
+    private enum HpChannel { ALL, GUILD, PARTY, COOP, PM }
 
     // Toggles
 
@@ -148,6 +148,7 @@ public class AutomeowClient implements ClientModInitializer {
             case "party":   return HpChannel.PARTY;
             case "guild":   return HpChannel.GUILD;
             case "coop":    return HpChannel.COOP;
+            case "from":    return HpChannel.PM;
             default:        return HpChannel.ALL;
         }
     }
@@ -503,6 +504,7 @@ public class AutomeowClient implements ClientModInitializer {
                 case "gc", "guildchat" -> HpChannel.GUILD;
                 case "cc", "coopchat"  -> HpChannel.COOP;
                 case "ac", "allchat"   -> HpChannel.ALL;
+                case "r" -> HpChannel.PM;
                 default -> null;
             };
             if (ch == null) return;
@@ -792,6 +794,7 @@ public class AutomeowClient implements ClientModInitializer {
                 case GUILD -> "/gc " + out;
                 case PARTY -> "/pc " + out;
                 case COOP  -> "/cc " + out;
+                case PM -> "/r " + out;
                 case ALL -> "/ac " + out;
             };
 
