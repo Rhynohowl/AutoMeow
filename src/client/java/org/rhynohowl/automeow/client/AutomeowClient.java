@@ -83,7 +83,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static Path CONFIG_PATH;
 
-    private enum HpChannel { ALL, GUILD, PARTY, COOP, PM }
+    private enum HpChannel { ALL, GUILD, PARTY, COOP, PM, IGNORE }
 
     // Toggles
 
@@ -149,6 +149,7 @@ public class AutomeowClient implements ClientModInitializer {
             case "guild":   return HpChannel.GUILD;
             case "coop":    return HpChannel.COOP;
             case "from":    return HpChannel.PM;
+            case "to":      return HpChannel.IGNORE;
             default:        return HpChannel.ALL;
         }
     }
@@ -725,6 +726,8 @@ public class AutomeowClient implements ClientModInitializer {
         }
 
         HpChannel ch = detectHpChan(clean);
+        if (ch == HpChannel.IGNORE) return;
+
         long now = System.currentTimeMillis();
 
         UUID meUUID = mc.getSession().getUuidOrNull();
@@ -796,6 +799,7 @@ public class AutomeowClient implements ClientModInitializer {
                 case COOP  -> "/cc " + out;
                 case PM -> "/r " + out;
                 case ALL -> "/ac " + out;
+                case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
             };
 
             debug("sending: " + toSend);

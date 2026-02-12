@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "automeow",
-  "version": "1.15",
+  "version": "1.15.2",
   "name": "AutoMeow 1.21.10",
   "description": "Automatically replies \"meow\" when someone says \"meow\" in chat.",
   "authors": ["Rhynohowl"],
