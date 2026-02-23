@@ -115,7 +115,7 @@ public class AutomeowModMenu implements ModMenuApi {
                             )
                             .setSelections(new LinkedHashSet<>(AutomeowClient.REPLY_PRESETS))
                             .setDefaultValue(AutomeowClient.DEFAULT_REPLY_TEXT)
-                            .setSaveConsumer(v -> AutomeowClient.setReplyText(v, true))
+                            .setSaveConsumer(v -> AutomeowClient.setReplyText(v))
                             .build()
             );
 

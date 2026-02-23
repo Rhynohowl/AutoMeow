@@ -6,6 +6,7 @@ plugins {
 version = project.findProperty("mod_version") ?: "1.0.0"
 group = project.findProperty("maven_group") ?:"org.rhynohowl"
 
+
 base {
     archivesName = project.archives_base_name
 }

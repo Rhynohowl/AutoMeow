@@ -47,7 +47,7 @@ import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.lit
 public class AutomeowClient implements ClientModInitializer {
     // Tunables
     public static volatile int MY_MESSAGES_REQUIRED = 3;      // you must send 3 msgs between auto-replies
-    public static volatile long QUIET_AFTER_SEND_MS = 1000;   // mute echoes after we send (and after you type meow)
+    public static volatile long QUIET_AFTER_SEND_MS = 3500;   // mute echoes after we send (and after you type meow)
     private static final int PASTEL_PINK = 0xFFC0CB; // soft pastel pink (#ffc0cb)
     public static final AtomicBoolean CHROMA_WANTED = new AtomicBoolean(false); // user toggle for chroma
     private static final int AARON_CHROMA_SENTINEL = 0xAA5500;
@@ -102,9 +102,9 @@ public class AutomeowClient implements ClientModInitializer {
     private static final java.util.regex.Pattern LEADING_WORD =
             java.util.regex.Pattern.compile("^\\s*([A-Za-z]+(?:[-\\p{Pd}][A-Za-z]+)?)");
 
-    private static String normaliseChat(String stringington) {
-        if (stringington == null) return "";
-        return stringington
+    private static String normaliseChat(String rawChat) {
+        if (rawChat == null) return "";
+        return rawChat
                 .replaceAll("§.", "")
                 .replace('\u00A0', ' ')
                 .replaceAll("[\\u200B-\\u200F\\uFEFF\\u2060]", "")
@@ -115,9 +115,13 @@ public class AutomeowClient implements ClientModInitializer {
             "meow",
             "mrrp",
             "mrow",
+            "mrraow",
             "mer",
             "nya",
-            "purr"
+            "purr",
+            "bark",
+            "woof",
+            "wruff"
     );
 
     public static final String DEFAULT_REPLY_TEXT = REPLY_PRESETS.get(0);
@@ -199,6 +203,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static float clampf(float v, float min, float max) { // I HATE MATH MY FRIEND HELPED ME WITH THE MATH :C
         return Math.max(min, Math.min(max, v));
     }
+
     private static float jitterAround(float base, float jitterFraction, net.minecraft.util.math.random.Random r) {
         float j = (r.nextFloat() * 2f - 1f) * jitterFraction;
         return base * (1f + j);
@@ -314,7 +319,7 @@ public class AutomeowClient implements ClientModInitializer {
             HEARTS_EFFECT.set(CONFIG.heartsEffect);
 
             // reply text: allow anything from disk; enforce "mer" only on user edits
-            if (!setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow", /*fromUser=*/false)) {
+            if (!setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow")) {
                 REPLY_TEXT = DEFAULT_REPLY_TEXT;
             }
 
@@ -346,12 +351,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static ClientWorld lastWorld = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(?i)(^|\\W)meow(\\W|$)", Pattern.CASE_INSENSITIVE);
-
-    // can see meows in chats other than all chat hopefully
-    private static final Pattern ROUNDED_CHAT_CMD =
-            Pattern.compile("^(?:/?)(?:ac|allchat|pc|partychat|gc|guildchat|cc|coopchat)\\s+(.+)$",
-                    Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:meow+|mrrp+|mrow+|mrraow+|mer+|nya+~*|purr+|bark+|woof+|wruff+)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     private static boolean hasAaronMod() {
         FabricLoader fl = FabricLoader.getInstance();
@@ -463,11 +463,11 @@ public class AutomeowClient implements ClientModInitializer {
 
     // Allow replies that contain "mer" anywhere (case-insensitive), e.g., merp/meraow/merps/nya/~.
     private static final Pattern CAT_SOUND = Pattern.compile(
-            "(m+e+o+w|mer|m+r+r+p+|m+r+o+w+|ny+a+~*)",
+            "(^|\\W)(?:meow+|mrrp+|mrow+|mrraow+|mer+|nya+~*|purr+|bark+|woof+|wruff+)(\\W|$)",
             Pattern.CASE_INSENSITIVE
     );
 
-    public static boolean setReplyText(String requestedText, boolean fromUser) {
+    public static boolean setReplyText(String requestedText) {
         String canon = canonicalPresetOrNull(requestedText);
         if (canon == null) return false;
         REPLY_TEXT = canon;
@@ -680,7 +680,7 @@ public class AutomeowClient implements ClientModInitializer {
                                             })
                                             .executes(ctx -> {
                                                 String wanted = StringArgumentType.getString(ctx, "preset");
-                                                boolean ok = setReplyText(wanted, true);
+                                                boolean ok = setReplyText(wanted);
 
                                                 if (ok) {
                                                     saveConfig();
