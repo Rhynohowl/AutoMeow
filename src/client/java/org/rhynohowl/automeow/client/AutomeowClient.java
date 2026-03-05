@@ -54,6 +54,9 @@ public class AutomeowClient implements ClientModInitializer {
     public static final java.util.concurrent.atomic.AtomicBoolean PLAY_SOUND = new java.util.concurrent.atomic.AtomicBoolean(true);
     public static final java.util.concurrent.atomic.AtomicBoolean HEARTS_EFFECT = new java.util.concurrent.atomic.AtomicBoolean(true);
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
+    private static final AtomicBoolean ON_HYPIXEL = new AtomicBoolean(false);
+    private static final Pattern VANILLA_WHISPER_IN = Pattern.compile("^\\s*<?([A-Za-z0-9_]{3,16})>?\\s+whispers\\s+to\\s+you\\s*:", Pattern.CASE_INSENSITIVE);
+    private static String lastWhisperFrom = null;
 
     // Modrinth
     private static final String MODRINTH_SLUG = "automeow"; // your Modrinth project slug
@@ -135,6 +138,14 @@ public class AutomeowClient implements ClientModInitializer {
         return null;
     }
 
+    private static void refreshServerMode(MinecraftClient mc) {
+        var servercheck = mc.getCurrentServerEntry();
+        boolean hypixel = servercheck != null
+                && servercheck.address != null
+                && servercheck.address.toLowerCase(java.util.Locale.ROOT).contains("hypixel.net");
+        ON_HYPIXEL.set(hypixel);
+    }
+
     private static void startTimer() {
         long timer = System.currentTimeMillis() + QUIET_AFTER_SEND_MS;
         echoUntil.set(timer);
@@ -144,6 +155,11 @@ public class AutomeowClient implements ClientModInitializer {
     private static HpChannel detectHpChan(String raw) {
         if (raw == null) return HpChannel.ALL;
         String s = raw.replaceAll("§.", "");
+
+        if (VANILLA_WHISPER_IN.matcher(s).find()) {
+            return HpChannel.PM;
+        }
+
         s = s.replaceAll("\\p{Pd}", "-");
         var m = LEADING_WORD.matcher(s);
         if (!m.find()) return HpChannel.ALL;
@@ -542,7 +558,10 @@ public class AutomeowClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world != lastWorld) {
                 lastWorld = client.world;
+                refreshServerMode(client);
+
                 for (HpChannel ch : HpChannel.values()) {
+                    if (ch == HpChannel.IGNORE) continue;
                     counter(ch).set(MY_MESSAGES_REQUIRED);
                 }
             }
@@ -710,9 +729,27 @@ public class AutomeowClient implements ClientModInitializer {
         if (mc.player == null) { debug("blocked: no player"); return; }
 
         String raw = message.getString();
-        String clean = normaliseChat(raw);
 
         if (raw == null) { debug("blocked: raw null"); return; }
+
+        String clean = normaliseChat(raw);
+
+        String vanillaWhisperFrom = null;
+        boolean isVanillaWhisper = false;
+
+        var whisper_matcher = VANILLA_WHISPER_IN.matcher(clean);
+        if (whisper_matcher.find()) {
+            lastWhisperFrom = whisper_matcher.group(1);
+            isVanillaWhisper = true;
+            debug("vanilla pm from=" + lastWhisperFrom);
+        }
+
+        HpChannel ch = detectHpChan(clean);
+        if (vanillaWhisperFrom != null) {
+            ch = HpChannel.PM;
+        }
+
+        if (ch == HpChannel.IGNORE) return;
 
         // play SFX at play who meows & self
         if (CAT_SOUND.matcher(raw).find()) {
@@ -724,9 +761,6 @@ public class AutomeowClient implements ClientModInitializer {
                 }
             }
         }
-
-        HpChannel ch = detectHpChan(clean);
-        if (ch == HpChannel.IGNORE) return;
 
         long now = System.currentTimeMillis();
 
@@ -787,27 +821,66 @@ public class AutomeowClient implements ClientModInitializer {
             }
         }
 
+        if (ch == HpChannel.PM && !isVanillaWhisper) {
+            if (!VANILLA_WHISPER_IN.matcher(clean).find()) {
+                String header = clean.split(":", 2)[0];
+
+                java.util.regex.Matcher usernameFinder = java.util.regex.Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b").matcher(header);
+                String found = null;
+                while (usernameFinder.find()) found = usernameFinder.group(1);
+                if (found != null) lastWhisperFrom = found;
+            }
+        }
+
         debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
 
         if (mc.player != null && mc.player.networkHandler != null) {
             skipNextOwnIncrement.set(true);
 
             String out = REPLY_TEXT + (APPEND_FACE.get() ? " :3" : "");
-            String toSend = switch (ch) {
-                case GUILD -> "/gc " + out;
-                case PARTY -> "/pc " + out;
-                case COOP  -> "/cc " + out;
-                case PM -> "/r " + out;
-                case ALL -> "/ac " + out;
-                case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
-            };
 
-            debug("sending: " + toSend);
+            if (!ON_HYPIXEL.get() && ch == HpChannel.PM) {
+                String target = lastWhisperFrom;
 
-            skipNextOwnIncrement.set(true);
+                if (target == null || target.isBlank()) {
+                    debug("PM send blocked: lastWhisperFrom is null/blank. clean='" + clean + "'");
+                    return;
+                }
 
-            startTimer();
-            mc.player.networkHandler.sendChatCommand(toSend.substring(1));
+                String cmd = "msg " + target + " " + out;
+                debug("sending: /" + cmd);
+
+                skipNextOwnIncrement.set(true);
+                startTimer();
+                mc.player.networkHandler.sendChatCommand(cmd);
+
+                triggerCatCueAt(mc.player);
+                counter(ch).set(0);
+                return;
+            }
+
+            if (ON_HYPIXEL.get()) {
+                String cmd = switch (ch) {
+                    case GUILD -> "gc " + out;
+                    case PARTY -> "pc " + out;
+                    case COOP -> "cc " + out;
+                    case PM -> "r " + out;
+                    case ALL -> "ac " + out;
+                    case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
+                };
+                debug("sending: " + cmd);
+                skipNextOwnIncrement.set(true);
+                startTimer();
+
+                mc.player.networkHandler.sendChatCommand(cmd);
+            } else {
+                    debug("sending: " + out);
+                    skipNextOwnIncrement.set(true);
+                    startTimer();
+
+                    mc.player.networkHandler.sendChatMessage(out);
+                }
+
             triggerCatCueAt(mc.player);
             if (ch != HpChannel.PARTY) counter(ch).set(0);
         } else {
