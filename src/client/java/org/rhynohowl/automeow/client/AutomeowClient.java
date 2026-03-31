@@ -12,6 +12,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.text.Text;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -168,9 +169,8 @@ public class AutomeowClient implements ClientModInitializer {
             case "party":   return HpChannel.PARTY;
             case "guild":   return HpChannel.GUILD;
             case "coop":    return HpChannel.COOP;
-            case "from":    return HpChannel.PM;
-            case "to":      return HpChannel.IGNORE;
-            default:        return HpChannel.ALL;
+            case "from", "to":    return HpChannel.PM;
+            default:        return HpChannel.IGNORE;
         }
     }
 
@@ -477,12 +477,6 @@ public class AutomeowClient implements ClientModInitializer {
     // Custom reply text (what we send). Default: "meow".
     public static volatile String REPLY_TEXT = DEFAULT_REPLY_TEXT;
 
-    // Allow replies that contain "mer" anywhere (case-insensitive), e.g., merp/meraow/merps/nya/~.
-    private static final Pattern CAT_SOUND = Pattern.compile(
-            "(^|\\W)(?:meow+|mrrp+|mrow+|mrraow+|mer+|nya+~*|purr+|bark+|woof+|wruff+)(\\W|$)",
-            Pattern.CASE_INSENSITIVE
-    );
-
     public static boolean setReplyText(String requestedText) {
         String canon = canonicalPresetOrNull(requestedText);
         if (canon == null) return false;
@@ -499,11 +493,9 @@ public class AutomeowClient implements ClientModInitializer {
         ClientSendMessageEvents.CHAT.register(msg -> {
             if (msg == null) return;
 
+            // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
             if (MEOW.matcher(msg).find()) {
                 startTimer();
-            }
-            // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
-            if (CAT_SOUND.matcher(msg).find()) {
                 MinecraftClient mcc = MinecraftClient.getInstance();
                 if (mcc.player != null) {
                     mcc.execute(() -> triggerCatCueAt(mcc.player));
@@ -531,10 +523,6 @@ public class AutomeowClient implements ClientModInitializer {
 
             if (MEOW.matcher(payload).find()) {
                 startTimer();
-                return;
-            }
-
-            if (CAT_SOUND.matcher(payload).find()) {
                 MinecraftClient mcc = MinecraftClient.getInstance();
                 if (mcc.player != null) {
                     mcc.execute(() -> triggerCatCueAt(mcc.player));
@@ -745,14 +733,17 @@ public class AutomeowClient implements ClientModInitializer {
         }
 
         HpChannel ch = detectHpChan(clean);
+
+
         if (vanillaWhisperFrom != null) {
             ch = HpChannel.PM;
         }
 
+
         if (ch == HpChannel.IGNORE) return;
 
         // play SFX at play who meows & self
-        if (CAT_SOUND.matcher(raw).find()) {
+        if (MEOW.matcher(raw).find()) {
             PlayerEntity src = resolveSender(mc, sender, raw);
             if (src != null) {
                 UUID me = mc.getSession().getUuidOrNull();
@@ -767,6 +758,11 @@ public class AutomeowClient implements ClientModInitializer {
         UUID meUUID = mc.getSession().getUuidOrNull();
         String myName = mc.player.getGameProfile().name();
 
+        if (now < echoUntil.get()) {
+            debug("blocked: echo quiet (" + (echoUntil.get() - now) + "ms left) chan =" + ch);
+            return;
+        }
+
         boolean isMe =
                 (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
                         (myName != null && clean.contains(myName + ":"));
@@ -779,6 +775,7 @@ public class AutomeowClient implements ClientModInitializer {
 
             if (MEOW.matcher(clean).find()) {
                 if (ch != HpChannel.PARTY) counter(ch).set(0);
+                startTimer();
                 debug("own meow, reset counter chan=" + ch);
                 return;
             }
@@ -786,11 +783,6 @@ public class AutomeowClient implements ClientModInitializer {
                 counter(ch).incrementAndGet();
                 debug("own msg -> " + ch + " = " + counter(ch).get());
             }
-            return;
-        }
-
-        if (now < echoUntil.get()) {
-            debug("blocked: echo quiet (" + (echoUntil.get() - now) + "ms left) chan =" + ch);
             return;
         }
 
@@ -851,11 +843,11 @@ public class AutomeowClient implements ClientModInitializer {
                 debug("sending: /" + cmd);
 
                 skipNextOwnIncrement.set(true);
+                counter(ch).set(0);
                 startTimer();
                 mc.player.networkHandler.sendChatCommand(cmd);
 
                 triggerCatCueAt(mc.player);
-                counter(ch).set(0);
                 return;
             }
 
@@ -869,12 +861,17 @@ public class AutomeowClient implements ClientModInitializer {
                     case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
                 };
                 debug("sending: " + cmd);
+                debug("detected channel: " + ch);
                 skipNextOwnIncrement.set(true);
                 startTimer();
-
-                mc.player.networkHandler.sendChatCommand(cmd);
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException ie) {
+                    mc.player.networkHandler.sendChatCommand(cmd);
+                }
             } else {
                     debug("sending: " + out);
+                    debug("detected channel: " + ch);
                     skipNextOwnIncrement.set(true);
                     startTimer();
 
