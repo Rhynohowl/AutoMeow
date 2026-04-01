@@ -41,6 +41,7 @@ import com.google.gson.JsonParser;
 import net.minecraft.text.Style;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
+import org.lwjgl.system.linux.PThread;
 
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -867,14 +868,19 @@ public class AutomeowClient implements ClientModInitializer {
                 try {
                     Thread.sleep(1);
                 } catch (InterruptedException ie) {
-                    mc.player.networkHandler.sendChatCommand(cmd);
+                    Thread.currentThread().interrupt();
                 }
+                mc.player.networkHandler.sendChatCommand(cmd);
             } else {
                     debug("sending: " + out);
                     debug("detected channel: " + ch);
                     skipNextOwnIncrement.set(true);
                     startTimer();
-
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
                     mc.player.networkHandler.sendChatMessage(out);
                 }
 
