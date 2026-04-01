@@ -41,7 +41,6 @@ import com.google.gson.JsonParser;
 import net.minecraft.text.Style;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
-import org.lwjgl.system.linux.PThread;
 
 
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
@@ -170,7 +169,8 @@ public class AutomeowClient implements ClientModInitializer {
             case "party":   return HpChannel.PARTY;
             case "guild":   return HpChannel.GUILD;
             case "coop":    return HpChannel.COOP;
-            case "from", "to":    return HpChannel.PM;
+            case "from":    return HpChannel.PM;
+            case "to":      return  HpChannel.IGNORE;
             default:        return HpChannel.IGNORE;
         }
     }
@@ -740,7 +740,6 @@ public class AutomeowClient implements ClientModInitializer {
             ch = HpChannel.PM;
         }
 
-
         if (ch == HpChannel.IGNORE) return;
 
         // play SFX at play who meows & self
@@ -865,12 +864,20 @@ public class AutomeowClient implements ClientModInitializer {
                 debug("detected channel: " + ch);
                 skipNextOwnIncrement.set(true);
                 startTimer();
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
-                mc.player.networkHandler.sendChatCommand(cmd);
+                final HpChannel finalCh = ch;
+                java.util.concurrent.CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS)
+                        .execute(() -> mc.execute(() -> {
+                            if (System.currentTimeMillis() < echoUntil.get()) {
+                                debug("blocked: echo quiet (" + (echoUntil.get() - now) + "ms left) chan =" + finalCh);
+                                return;
+                            }
+                            if (mc.player != null && mc.player.networkHandler != null) {
+                                mc.player.networkHandler.sendChatCommand(cmd);
+                                triggerCatCueAt(mc.player);
+                                if (finalCh != HpChannel.PARTY) counter(finalCh).set(0);
+                            }
+                        }));
+                return;
             } else {
                     debug("sending: " + out);
                     debug("detected channel: " + ch);
