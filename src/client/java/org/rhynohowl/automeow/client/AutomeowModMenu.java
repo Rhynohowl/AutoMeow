@@ -21,7 +21,7 @@ public class AutomeowModMenu implements ModMenuApi {
         String trimed = typed.trim();
         if (trimed.isEmpty()) return null;
 
-        for (String option : AutomeowClient.REPLY_PRESETS) {
+        for (String option : ModState.REPLY_PRESETS) {
             if (option.equalsIgnoreCase(trimed)) return option;
         }
         return null;
@@ -35,27 +35,27 @@ public class AutomeowModMenu implements ModMenuApi {
                     .setTitle(Text.literal("[AutoMeow] Settings"));
 
             // Save callback when user clicks "Done"
-            builder.setSavingRunnable(AutomeowModMenu::saveToDisk);
+            builder.setSavingRunnable(ModConfig::save);
 
             ConfigCategory general = builder.getOrCreateCategory(Text.literal("General"));
             ConfigEntryBuilder eb = builder.entryBuilder();
 
             // Enabled toggle
             general.addEntry(
-                    eb.startBooleanToggle(Text.literal("Enabled"), AutomeowClient.ENABLED.get())
+                    eb.startBooleanToggle(Text.literal("Enabled"), ModState.ENABLED.get())
                             .setDefaultValue(true)
-                            .setSaveConsumer(val -> AutomeowClient.ENABLED.set(val))
+                            .setSaveConsumer(val -> ModState.ENABLED.set(val))
                             .setTooltip(Text.literal("Master switch for AutoMeow"))
                             .build()
             );
 
             // Chroma toggle (only useful if Aaron-mod is present)
-            boolean canChroma = AutomeowClient.aaronChromaAvailable();
+            boolean canChroma = ChromaHelper.aaronChromaAvailable();
             AbstractConfigListEntry<Boolean> chromaEntry =
                     eb.startBooleanToggle(Text.literal("Chroma badge (Aaron-mod)"),
-                                    AutomeowClient.CHROMA_WANTED.get() && canChroma)
+                                    ModState.CHROMA_WANTED.get() && canChroma)
                             .setDefaultValue(false)
-                            .setSaveConsumer(val -> AutomeowClient.CHROMA_WANTED.set(val && canChroma))
+                            .setSaveConsumer(val -> ModState.CHROMA_WANTED.set(val && canChroma))
                             .setTooltip(
                                     Text.literal("Uses Aaron-mod's chroma_text pack for an animated [AutoMeow] badge.")
                                             .append(Text.literal(canChroma ? "" : "\n(Not available: Aaron-mod or pack disabled)")
@@ -68,9 +68,9 @@ public class AutomeowModMenu implements ModMenuApi {
             // My messages required (0..10; 0 disables)
             general.addEntry(
                     eb.startIntSlider(Text.literal("My messages required (0 disables)"),
-                                    AutomeowClient.MY_MESSAGES_REQUIRED, 0, 10)
+                                    ModState.MY_MESSAGES_REQUIRED, 0, 10)
                             .setDefaultValue(3)
-                            .setSaveConsumer(val -> AutomeowClient.MY_MESSAGES_REQUIRED = val)
+                            .setSaveConsumer(val -> ModState.MY_MESSAGES_REQUIRED = val)
                             .setTooltip(Text.literal("How many of YOUR chat messages must be sent\nbefore AutoMeow can reply again."))
                             .build()
             );
@@ -78,12 +78,12 @@ public class AutomeowModMenu implements ModMenuApi {
             // Quiet window after send (ms)
             general.addEntry(
                     eb.startIntField(Text.literal("Quiet window after send (ms)"),
-                                    (int) AutomeowClient.QUIET_AFTER_SEND_MS)
+                                    (int) ModState.QUIET_AFTER_SEND_MS)
                             .setDefaultValue(3500)
                             .setMin(0)
                             .setMax(20000)
                             .setSaveConsumer(val ->
-                                    AutomeowClient.QUIET_AFTER_SEND_MS = (long) Math.max(0, Math.min(val, 20000)))
+                                    ModState.QUIET_AFTER_SEND_MS = (long) Math.max(0, Math.min(val, 20000)))
                             .setTooltip(Text.literal("Ignore immediate echoes for this many milliseconds\n"
                                     + "after the bot (or you) sends a message."))
                             .build()
@@ -91,9 +91,9 @@ public class AutomeowModMenu implements ModMenuApi {
 
             // :3 toggle
             general.addEntry(
-                    eb.startBooleanToggle(Text.literal("Append \" :3\" to reply"), AutomeowClient.APPEND_FACE.get())
+                    eb.startBooleanToggle(Text.literal("Append \" :3\" to reply"), ModState.APPEND_FACE.get())
                             .setDefaultValue(false)
-                            .setSaveConsumer(val -> { AutomeowClient.APPEND_FACE.set(val); AutomeowClient.saveConfig(); })
+                            .setSaveConsumer(val -> { ModState.APPEND_FACE.set(val); ModConfig.save(); })
                             .setTooltip(Text.literal("When enabled, the mod sends your reply text followed by \" :3\"."))
                             .build()
             );
@@ -102,7 +102,7 @@ public class AutomeowModMenu implements ModMenuApi {
                     eb.startDropdownMenu(
                                     Text.literal("Reply text"),
                                     DropdownMenuBuilder.TopCellElementBuilder.of(
-                                            AutomeowClient.REPLY_TEXT,
+                                            ModState.REPLY_TEXT,
                                             AutomeowModMenu::canonicalPresetOrNull,
                                             preset -> Text.literal(preset == null ? "" : preset)
                                     ),
@@ -113,35 +113,31 @@ public class AutomeowModMenu implements ModMenuApi {
                                             preset -> Text.literal(preset == null ? "" : preset)
                                     )
                             )
-                            .setSelections(new LinkedHashSet<>(AutomeowClient.REPLY_PRESETS))
-                            .setDefaultValue(AutomeowClient.DEFAULT_REPLY_TEXT)
-                            .setSaveConsumer(v -> AutomeowClient.setReplyText(v))
+                            .setSelections(new LinkedHashSet<>(ModState.REPLY_PRESETS))
+                            .setDefaultValue(ModState.DEFAULT_REPLY_TEXT)
+                            .setSaveConsumer(selectedPreset -> ModState.setReplyText(selectedPreset))
                             .build()
             );
 
             // Play meow sound
             general.addEntry(
-                    eb.startBooleanToggle(Text.literal("Play meow sound"), AutomeowClient.PLAY_SOUND.get())
+                    eb.startBooleanToggle(Text.literal("Play meow sound"), ModState.PLAY_SOUND.get())
                             .setDefaultValue(true)
-                            .setSaveConsumer(val -> { AutomeowClient.PLAY_SOUND.set(val); AutomeowClient.saveConfig(); })
+                            .setSaveConsumer(val -> { ModState.PLAY_SOUND.set(val); ModConfig.save(); })
                             .setTooltip(Text.literal("Plays a cat meow when someone says a cat-sound (you or others)."))
                             .build()
             );
 
             // Show heart particles
             general.addEntry(
-                    eb.startBooleanToggle(Text.literal("Show heart particles"), AutomeowClient.HEARTS_EFFECT.get())
+                    eb.startBooleanToggle(Text.literal("Show heart particles"), ModState.HEARTS_EFFECT.get())
                             .setDefaultValue(true)
-                            .setSaveConsumer(val -> { AutomeowClient.HEARTS_EFFECT.set(val); AutomeowClient.saveConfig(); })
+                            .setSaveConsumer(val -> { ModState.HEARTS_EFFECT.set(val); ModConfig.save(); })
                             .setTooltip(Text.literal("Spawns the hearts effect around the player who meowed."))
                             .build()
             );
 
             return builder.build();
         };
-    }
-
-    private static void saveToDisk() {
-        AutomeowClient.saveConfig();
     }
 }
