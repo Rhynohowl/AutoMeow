@@ -54,7 +54,7 @@ public class AutomeowClient implements ClientModInitializer {
                 case "gc", "guildchat" -> HpChannel.GUILD;
                 case "cc", "coopchat"  -> HpChannel.COOP;
                 case "ac", "allchat"   -> HpChannel.ALL;
-                case "r" -> HpChannel.PM;
+                case "r", "msg", "tell", "w" -> HpChannel.PM;
                 default -> null;
             };
             if (ch == null) return;
