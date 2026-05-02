@@ -2,10 +2,10 @@ package org.rhynohowl.automeow.client;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 public final class AutomeowCommands {
     public static void register() {
@@ -41,28 +41,28 @@ public final class AutomeowCommands {
                             .then(literal("chroma").executes(ctx -> {
                                 if (!ChromaHelper.hasAaronMod()) {
                                     ctx.getSource().sendFeedback(ChatUtil.badge()
-                                            .append(Text.literal("Aaron-mod not found").formatted(Formatting.RED)));
+                                            .append(Component.literal("Aaron-mod not found").withStyle(ChatFormatting.RED)));
                                     return 0;
                                 }
                                 if (!ChromaHelper.aaronChromaAvailable()) {
                                     ctx.getSource().sendFeedback(ChatUtil.badge()
-                                            .append(Text.literal("Chroma pack is disabled").formatted(Formatting.YELLOW)));
+                                            .append(Component.literal("Chroma pack is disabled").withStyle(ChatFormatting.YELLOW)));
                                     return 0;
                                 }
                                 boolean newValue = !ModState.CHROMA_WANTED.get();
                                 ModState.CHROMA_WANTED.set(newValue);
                                 ModConfig.save();
                                 ctx.getSource().sendFeedback(ChatUtil.badge()
-                                        .append(Text.literal("Chroma " + (newValue ? "ON" : "OFF"))
-                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        .append(Component.literal("Chroma " + (newValue ? "ON" : "OFF"))
+                                                .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
                                 return newValue ? 1 : 0;
                             }))
                             .then(literal("debug").executes(ctx -> {
                                 boolean newValue = !ModState.DEBUG.get();
                                 ModState.DEBUG.set(newValue);
                                 ctx.getSource().sendFeedback(
-                                        ChatUtil.badge().append(Text.literal("Debug " + (newValue ? "ON" : "OFF"))
-                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED))
+                                        ChatUtil.badge().append(Component.literal("Debug " + (newValue ? "ON" : "OFF"))
+                                                .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED))
                                 );
                                 return newValue ? 1 : 0;
                             }))
@@ -73,18 +73,18 @@ public final class AutomeowCommands {
                                         ModState.HEARTS_EFFECT.set(newValue);
                                         ModConfig.save();
                                         ctx.getSource().sendFeedback(
-                                                ChatUtil.badge().append(Text.literal("Hearts " + (newValue ? "ON" : "OFF"))
-                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                ChatUtil.badge().append(Component.literal("Hearts " + (newValue ? "ON" : "OFF"))
+                                                        .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
                                         return newValue ? 1 : 0;
                                     })
                                     .then(literal("on").executes(ctx -> {
                                         ModState.HEARTS_EFFECT.set(true); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Hearts ON").formatted(Formatting.GREEN)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Hearts ON").withStyle(ChatFormatting.GREEN)));
                                         return 1;
                                     }))
                                     .then(literal("off").executes(ctx -> {
                                         ModState.HEARTS_EFFECT.set(false); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Hearts OFF").formatted(Formatting.RED)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Hearts OFF").withStyle(ChatFormatting.RED)));
                                         return 1;
                                     }))
                             )
@@ -95,18 +95,18 @@ public final class AutomeowCommands {
                                         ModState.PLAY_SOUND.set(newValue);
                                         ModConfig.save();
                                         ctx.getSource().sendFeedback(
-                                                ChatUtil.badge().append(Text.literal("Cat Sound " + (newValue ? "ON" : "OFF"))
-                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                ChatUtil.badge().append(Component.literal("Cat Sound " + (newValue ? "ON" : "OFF"))
+                                                        .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
                                         return newValue ? 1 : 0;
                                     })
                                     .then(literal("on").executes(ctx -> {
                                         ModState.PLAY_SOUND.set(true); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Sound ON").formatted(Formatting.GREEN)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Cat Sound ON").withStyle(ChatFormatting.GREEN)));
                                         return 1;
                                     }))
                                     .then(literal("off").executes(ctx -> {
                                         ModState.PLAY_SOUND.set(false); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Sound OFF").formatted(Formatting.RED)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Cat Sound OFF").withStyle(ChatFormatting.RED)));
                                         return 1;
                                     }))
                             )
@@ -117,23 +117,23 @@ public final class AutomeowCommands {
                                         ModState.APPEND_FACE.set(newValue);
                                         ModConfig.save();
                                         ctx.getSource().sendFeedback(
-                                                ChatUtil.badge().append(Text.literal("Cat Face " + (newValue ? "ON" : "OFF"))
-                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                ChatUtil.badge().append(Component.literal("Cat Face " + (newValue ? "ON" : "OFF"))
+                                                        .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
                                         return newValue ? 1 : 0;
                                     })
                                     .then(literal("on").executes(ctx -> {
                                         ModState.APPEND_FACE.set(true); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Face ON").formatted(Formatting.GREEN)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Cat Face ON").withStyle(ChatFormatting.GREEN)));
                                         return 1;
                                     }))
                                     .then(literal("off").executes(ctx -> {
                                         ModState.APPEND_FACE.set(false); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Face OFF").formatted(Formatting.RED)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Cat Face OFF").withStyle(ChatFormatting.RED)));
                                         return 1;
                                     }))
                             )
                             .then(literal("say")
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands
                                             .argument("preset", StringArgumentType.greedyString())
                                             .suggests((ctx, suggestion) -> {
                                                 for (String opt : ModState.REPLY_PRESETS) suggestion.suggest(opt);
@@ -146,15 +146,15 @@ public final class AutomeowCommands {
                                                 if (ok) {
                                                     ModConfig.save();
                                                     ctx.getSource().sendFeedback(
-                                                            ChatUtil.badge().append(Text.literal("reply preset set to \"" + ModState.REPLY_TEXT + "\"")
-                                                                    .formatted(Formatting.GREEN))
+                                                            ChatUtil.badge().append(Component.literal("reply preset set to \"" + ModState.REPLY_TEXT + "\"")
+                                                                    .withStyle(ChatFormatting.GREEN))
                                                     );
                                                     return 1;
                                                 }
 
                                                 ctx.getSource().sendFeedback(
-                                                        ChatUtil.badge().append(Text.literal("Invalid preset. Choose one of: " + String.join(", ", ModState.REPLY_PRESETS))
-                                                                .formatted(Formatting.RED))
+                                                        ChatUtil.badge().append(Component.literal("Invalid preset. Choose one of: " + String.join(", ", ModState.REPLY_PRESETS))
+                                                                .withStyle(ChatFormatting.RED))
                                                 );
                                                 return 0;
                                             })

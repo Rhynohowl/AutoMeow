@@ -4,12 +4,12 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.ChatFormatting;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -59,7 +59,7 @@ public final class UpdateChecker {
 
     public static void checkForUpdateAsync() {
         final String currentModVer = currentModVersion();
-        final String currentMcVer = MinecraftClient.getInstance().getGameVersion();
+        final String currentMcVer = Minecraft.getInstance().getVersionType();
 
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
@@ -107,24 +107,24 @@ public final class UpdateChecker {
                             final String dlUrl  = bestUrl;
 
                             // Clientside hyperlink
-                            MinecraftClient mc = MinecraftClient.getInstance();
+                            Minecraft mc = Minecraft.getInstance();
                             if (mc != null) {
                                 Runnable  showUpdate = () -> mc.execute(() -> {
-                                    var link = Text.literal("Download update")
+                                    var link = Component.literal("Download update")
                                             .setStyle(
                                                     Style.EMPTY
-                                                            .withColor(Formatting.BLUE)
-                                                            .withUnderline(true)
+                                                            .withColor(ChatFormatting.BLUE)
+                                                            .withUnderlined(true)
                                                             .withClickEvent(new ClickEvent.OpenUrl(URI.create(dlUrl)))           // ← open URL
-                                                            .withHoverEvent(new HoverEvent.ShowText(Text.literal(dlUrl))) // ← tooltip
+                                                            .withHoverEvent(new HoverEvent.ShowText(Component.literal(dlUrl))) // ← tooltip
                                             );
 
                                     var msg = ChatUtil.badge()
-                                            .append(Text.literal(" Update available ").formatted(Formatting.YELLOW))
-                                            .append(Text.literal("(MC " + currentMcVer + ", v" + currentModVer + " → v" + latest + ") ").formatted(Formatting.GRAY))
+                                            .append(Component.literal(" Update available ").withStyle(ChatFormatting.YELLOW))
+                                            .append(Component.literal("(MC " + currentMcVer + ", v" + currentModVer + " → v" + latest + ") ").withStyle(ChatFormatting.GRAY))
                                             .append(link);
 
-                                    mc.inGameHud.getChatHud().addMessage(msg); // local only
+                                    mc.getChatListener().handleSystemMessage(msg, false); // local only
                                 });
                                 java.util.concurrent.CompletableFuture
                                         .delayedExecutor(15, java.util.concurrent.TimeUnit.SECONDS)

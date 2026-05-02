@@ -1,10 +1,10 @@
 package org.rhynohowl.automeow.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.ChatFormatting;
 
 public final class ChatUtil {
     private static final int PASTEL_PINK = 0xFFC0CB; // soft pastel pink (#ffc0cb)
@@ -20,39 +20,37 @@ public final class ChatUtil {
 
     public static void debug(String msg) {
         if (!ModState.DEBUG.get()) return;
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
         mc.execute(() -> {
-            if (mc.inGameHud != null) {
-                mc.inGameHud.getChatHud().addMessage(
-                        badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY))
+                mc.getChatListener().handleSystemMessage(
+                        badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY)), false
                 );
-            }
         });
     }
 
     // [AutoMeow] Prefix
-    public static MutableText badge() {
+    public static MutableComponent badge() {
         boolean chroma = ModState.CHROMA_WANTED.get() && ChromaHelper.aaronChromaAvailable();
 
-        MutableText name = Text.literal("AutoMeow")
-                .styled(s -> s.withBold(false)
+        MutableComponent name = Component.literal("AutoMeow")
+                .withStyle(s -> s.withBold(false)
                         // Aaron-mods chroma shader, if not installed then default to pastel pink
                         .withColor(TextColor.fromRgb(chroma ? ChromaHelper.getChromaSentinel() : PASTEL_PINK)));
 
-        return Text.literal("[").formatted(Formatting.GRAY)
+        return Component.literal("[").withStyle(ChatFormatting.GRAY)
                 .append(name)
-                .append(Text.literal("]").formatted(Formatting.GRAY))
-                .append(Text.literal(" "));
+                .append(Component.literal("]").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" "));
     }
 
-    public static MutableText statusLine(boolean enabled) {
-        MutableText state = Text.literal(enabled ? "ON" : "OFF")
-                .formatted(enabled ? Formatting.GREEN : Formatting.RED);
+    public static MutableComponent statusLine(boolean enabled) {
+        MutableComponent state = Component.literal(enabled ? "ON" : "OFF")
+                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED);
         return badge()
                 .append(state)
-                .append(Text.literal(" | ALL " + ModState.counter(HpChannel.ALL).get() +"/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
-                .append(Text.literal(" G " + ModState.counter(HpChannel.GUILD).get() + "/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
-                .append(Text.literal(" C " + ModState.counter(HpChannel.COOP).get() + "/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY));
+                .append(Component.literal(" | ALL " + ModState.counter(HpChannel.ALL).get() +"/" + ModState.MY_MESSAGES_REQUIRED).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" G " + ModState.counter(HpChannel.GUILD).get() + "/" + ModState.MY_MESSAGES_REQUIRED).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" C " + ModState.counter(HpChannel.COOP).get() + "/" + ModState.MY_MESSAGES_REQUIRED).withStyle(ChatFormatting.GRAY));
     }
 }

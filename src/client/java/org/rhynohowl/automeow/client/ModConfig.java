@@ -2,7 +2,7 @@ package org.rhynohowl.automeow.client;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,7 +31,7 @@ public final class ModConfig {
     // Load on startup
     public static void load() {
         try {
-            Path dir = MinecraftClient.getInstance().runDirectory.toPath().resolve("config");
+            Path dir = Minecraft.getInstance().gameDirectory.toPath().resolve("config");
             Files.createDirectories(dir);
             CONFIG_PATH = dir.resolve("automeow.json");
 
@@ -61,7 +61,7 @@ public final class ModConfig {
     public static void save() {
         try {
             if (CONFIG_PATH == null) {
-                Path dir = MinecraftClient.getInstance().runDirectory.toPath().resolve("config");
+                Path dir = Minecraft.getInstance().gameDirectory.toPath().resolve("config");
                 Files.createDirectories(dir);
                 CONFIG_PATH = dir.resolve("automeow.json");
             }
