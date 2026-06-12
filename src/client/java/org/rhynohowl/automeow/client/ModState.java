@@ -51,8 +51,14 @@ public final class ModState {
             "purr",
             "bark",
             "woof",
-            "wruff"
+            "wruff",
+            "hiss"
     );
+
+    public static void incrementReplyCount() {
+        ModConfig.CONFIG.totalReplies++;
+        ModConfig.save();
+    }
 
     public static final String DEFAULT_REPLY_TEXT = REPLY_PRESETS.get(0);
 

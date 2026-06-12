@@ -14,6 +14,8 @@ public enum HpChannel {
         return VANILLA_WHISPER_IN;
     }
 
+    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)*[A-Za-z0-9_]{3,16}\\s*:");
+
     public static HpChannel detect(String raw) {
         if (raw == null) return ALL;
         String strippedFormatting = raw.replaceAll("§.", "");
@@ -24,7 +26,7 @@ public enum HpChannel {
 
         strippedFormatting = strippedFormatting.replaceAll("\\p{Pd}", "-");
         var leadingWordMatcher = LEADING_WORD.matcher(strippedFormatting);
-        if (!leadingWordMatcher.find()) return ALL;
+        if (!leadingWordMatcher.find()) return IGNORE;
         String normalisedWord = leadingWordMatcher.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]", "");
         switch (normalisedWord) {
             case "party":   return PARTY;
@@ -32,7 +34,9 @@ public enum HpChannel {
             case "coop":    return COOP;
             case "from":    return PM;
             case "to":      return IGNORE;
-            default:        return ALL;
+            default:
+                if (ALL_CHAT.matcher(strippedFormatting).find()) return ALL;
+                return IGNORE;
         }
     }
 }

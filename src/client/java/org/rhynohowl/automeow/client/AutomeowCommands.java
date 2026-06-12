@@ -4,7 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-
+import java.awt.*;
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public final class AutomeowCommands {
@@ -132,6 +132,15 @@ public final class AutomeowCommands {
                                         return 1;
                                     }))
                             )
+                            .then(literal("stats").executes(ctx -> {
+                                ctx.getSource().sendFeedback(
+                                        ChatUtil.badge()
+                                                .append(Text.literal("Total meows sent: ").formatted(Formatting.WHITE))
+                                                .append(Text.literal(String.valueOf(ModConfig.CONFIG.totalReplies)).formatted(Formatting.AQUA))
+
+                                );
+                                return 1;
+                            }))
                             .then(literal("say")
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
                                             .argument("preset", StringArgumentType.greedyString())
