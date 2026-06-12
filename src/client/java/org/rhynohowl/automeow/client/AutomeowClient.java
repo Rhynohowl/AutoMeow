@@ -19,7 +19,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:meow+|mrrp+|mrow+|mrraow+|mer+|nya+~*|purr+|bark+|woof+|wruff+)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:meow+|mr+rp+|mr+ow+|mr+aow+|mer+|nya+~*|purr+|bark+|woof+|wr+uff+)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void onInitializeClient() {
@@ -205,7 +205,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (ch != HpChannel.PARTY) {
             int have = ModState.counter(ch).get();
 
-            if (have < ModState.MY_MESSAGES_REQUIRED && now < ModState.cooldownUntil.get()){
+            if (have < ModState.MY_MESSAGES_REQUIRED || now < ModState.cooldownUntil.get()){
                 ChatUtil.debug("blocked: need msgs OR time (have=" + have + "/" + ModState.MY_MESSAGES_REQUIRED +
                         ", timeLeft=" + (ModState.cooldownUntil.get() - now) + "ms, chan=" + ch + ")");
                 return;
@@ -252,6 +252,7 @@ public class AutomeowClient implements ClientModInitializer {
                 mc.player.connection.sendCommand(cmd);
 
                 CatCue.triggerCatCueAt(mc.player);
+                ModState.incrementReplyCount();
                 return;
             }
 
@@ -280,6 +281,7 @@ public class AutomeowClient implements ClientModInitializer {
                             if (mc.player != null && mc.player.connection != null) {
                                 mc.player.connection.sendCommand(cmd);
                                 CatCue.triggerCatCueAt(mc.player);
+                                ModState.incrementReplyCount();
                                 if (finalCh != HpChannel.PARTY) ModState.counter(finalCh).set(0);
                             }
                         }));
@@ -299,6 +301,7 @@ public class AutomeowClient implements ClientModInitializer {
             }
 
             CatCue.triggerCatCueAt(mc.player);
+            ModState.incrementReplyCount();
             if (ch != HpChannel.PARTY) ModState.counter(ch).set(0);
         } else {
             ChatUtil.debug("blocked: no networkHandler");
