@@ -132,6 +132,14 @@ public final class AutomeowCommands {
                                         return 1;
                                     }))
                             )
+                            .then(literal("stats").executes(ctx -> {
+                                ctx.getSource().sendFeedback(
+                                        ChatUtil.badge()
+                                                .append(Component.literal("Total meows sent: ").withStyle(ChatFormatting.WHITE))
+                                                .append(Component.literal(String.valueOf(ModConfig.CONFIG.totalReplies)).withStyle(ChatFormatting.AQUA))
+                                );
+                                return 1;
+                            }))
                             .then(literal("say")
                                     .then(net.fabricmc.fabric.api.client.command.v2.ClientCommands
                                             .argument("preset", StringArgumentType.greedyString())

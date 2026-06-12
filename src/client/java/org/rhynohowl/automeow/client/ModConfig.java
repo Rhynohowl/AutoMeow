@@ -24,6 +24,7 @@ public final class ModConfig {
         float baseVolume    = 0.8f;
         float volumeJitter  = 0.15f;
         float pitchJitter   = 0.10f;
+        long totalReplies = 0L;
     }
 
     public static Data CONFIG = new Data();

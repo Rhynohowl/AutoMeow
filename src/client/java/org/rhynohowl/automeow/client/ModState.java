@@ -66,6 +66,11 @@ public final class ModState {
         return true;
     }
 
+    public static void incrementReplyCount() {
+        ModConfig.CONFIG.totalReplies++;
+        ModConfig.save();
+    }
+
     private static String canonicalPresetOrNull(String input) {
         if (input == null) return null;
         String trimed = input.trim();
