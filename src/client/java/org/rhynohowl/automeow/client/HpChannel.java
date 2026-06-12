@@ -14,7 +14,7 @@ public enum HpChannel {
         return VANILLA_WHISPER_IN;
     }
 
-    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)+.*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
+    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)+.*?[A-Za-z0-9_]{3,16}\\s*(?:\\[[^\\]]*\\]\\s*)*\\S*\\s*:");
 
     public static HpChannel detect(String raw) {
         if (raw == null) return ALL;
@@ -25,18 +25,20 @@ public enum HpChannel {
         }
 
         strippedFormatting = strippedFormatting.replaceAll("\\p{Pd}", "-");
+
         var leadingWordMatcher = LEADING_WORD.matcher(strippedFormatting);
-        if (!leadingWordMatcher.find()) return IGNORE;
-        String normalisedWord = leadingWordMatcher.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]", "");
-        switch (normalisedWord) {
-            case "party":   return PARTY;
-            case "guild":   return GUILD;
-            case "coop":    return COOP;
-            case "from":    return PM;
-            case "to":      return IGNORE;
-            default:
-                if (ALL_CHAT.matcher(strippedFormatting).find()) return ALL;
-                return IGNORE;
+        if (leadingWordMatcher.find()) {
+            String normalisedWord = leadingWordMatcher.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]", "");
+            switch (normalisedWord) {
+                case "party":   return PARTY;
+                case "guild":   return GUILD;
+                case "coop":    return COOP;
+                case "from":    return PM;
+                case "to":      return IGNORE;
+            }
         }
+
+        if (ALL_CHAT.matcher(strippedFormatting).find()) return ALL;
+        return IGNORE;
     }
 }
