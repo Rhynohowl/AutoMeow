@@ -35,9 +35,6 @@ public enum HpChannel {
                 case "coop":    return COOP;
                 case "from":    return PM;
                 case "to":      return IGNORE;
-                default:
-                    if (ALL_CHAT.matcher(strippedFormatting).find()) return ALL;
-                    return IGNORE;
             }
         }
 
