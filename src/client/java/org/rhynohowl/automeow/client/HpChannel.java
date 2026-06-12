@@ -14,7 +14,7 @@ public enum HpChannel {
         return VANILLA_WHISPER_IN;
     }
 
-    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)*[A-Za-z0-9_]{3,16}\\s*:");
+    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)+.*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
     public static HpChannel detect(String raw) {
         if (raw == null) return ALL;
