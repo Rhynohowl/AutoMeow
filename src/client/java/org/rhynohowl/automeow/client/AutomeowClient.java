@@ -19,7 +19,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:meow+|mrr+p+|mr+ow+|mr+aow+|mer+|nya+~*|purr+|bark+|woof+|wr+uff+)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:meow+|mrr+p+|mr+ow+|mr+aow+|mer+|nya+~*|purr+|bark+|woof+|wr+uff+|grr+)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void onInitializeClient() {
@@ -156,7 +156,7 @@ public class AutomeowClient implements ClientModInitializer {
 
         boolean isMe =
                 (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
-                        (myName != null && clean.contains(myName + ":"));
+                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find());
 
         if (isMe) {
             if (ModState.skipNextOwnIncrement.getAndSet(false)) {
