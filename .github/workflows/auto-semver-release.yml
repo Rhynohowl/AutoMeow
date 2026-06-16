@@ -6,10 +6,10 @@ on:
     branches: [ main ]          
 
 permissions:
-  contents: write               
+  contents: read
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
 
     env:
@@ -34,50 +34,11 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Fetch tags
-        run: git fetch --tags --force
+      - name: Build
+        run: ./gradlew clean build
 
-      - name: Compute next 1.x version
-        id: ver
-        shell: bash
-        run: |
-          # find latest tag like v1.<number> only
-          LATEST=$(git tag -l "v${MAJOR}.[0-9]*" | sed -E "s/^v${MAJOR}\.//" | sort -n | tail -n1)
-          if [[ -z "$LATEST" ]]; then
-            NEXT_MINOR=0
-          else
-            NEXT_MINOR=$((LATEST + 1))
-          fi
-          VERSION="${MAJOR}.${NEXT_MINOR}"
-          TAG="v${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "tag=${TAG}"         >> "$GITHUB_OUTPUT"
-          echo "Next version: ${VERSION}"
-
-      - name: Build (sets Gradle version to 1.x)
-        run: ./gradlew -Pmod_version="${{ steps.ver.outputs.version }}" clean build
-
-      # Optional: verify the jar we expect exists
-      - name: List jars
-        run: ls -lh build/libs
-
-      - name: Find release jar
-        id: jar
-        shell: bash
-        run: |
-          set -euo pipefail
-          JAR=$(ls -1 build/libs/*.jar | grep -Ev -- '-sources\.jar$|-dev\.jar$' | head -n1)
-          echo "jar=$JAR" >> "$GITHUB_OUTPUT"
-          echo "Selected JAR: $JAR"
-
-      - name: Create GitHub Release v1.x
-        uses: softprops/action-gh-release@v1
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7.0.0
         with:
-          tag_name: ${{ steps.ver.outputs.tag }}
-          name: "AutoMeow 1.21.10 ${{ steps.ver.outputs.version }}"
-          generate_release_notes: true
-          files: ${{ steps.jar.outputs.jar }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
+          archive: false
+          path: build/libs/*-1.21.10.jar

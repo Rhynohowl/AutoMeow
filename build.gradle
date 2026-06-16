@@ -81,7 +81,7 @@ java {
 
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
+        rename { "${it}_${project.archives_base_name}" }
     }
 }
 
@@ -101,4 +101,12 @@ publishing {
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
     }
+}
+
+tasks.named('remapJar') {
+    archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}.jar"
+}
+
+tasks.named('remapSourcesJar') {
+    archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}-sources.jar"
 }
