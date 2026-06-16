@@ -174,6 +174,9 @@ public class AutomeowClient implements ClientModInitializer {
         if (isMe) {
             if (ModState.skipNextOwnIncrement.getAndSet(false)) {
                 ChatUtil.debug("own echo skipped");
+                if (!MEOW.matcher(clean).find() && ch != HpChannel.PARTY) {
+                    ModState.counter(ch).incrementAndGet();
+                }
                 return;
             }
 
