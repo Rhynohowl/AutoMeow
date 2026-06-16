@@ -52,7 +52,7 @@ public final class ModState {
             "bark",
             "woof",
             "wruff",
-            "hiss"
+            "grrr"
     );
 
     public static void incrementReplyCount() {
