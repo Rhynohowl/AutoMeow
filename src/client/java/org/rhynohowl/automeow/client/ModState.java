@@ -51,7 +51,8 @@ public final class ModState {
             "purr",
             "bark",
             "woof",
-            "wruff"
+            "wruff",
+            "grrr"
     );
 
     public static final String DEFAULT_REPLY_TEXT = REPLY_PRESETS.get(0);
