@@ -169,7 +169,7 @@ public class AutomeowClient implements ClientModInitializer {
 
         boolean isMe =
                 (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
-                        (myName != null && clean.contains(myName + ":"));
+                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find());
 
         if (isMe) {
             if (ModState.skipNextOwnIncrement.getAndSet(false)) {
