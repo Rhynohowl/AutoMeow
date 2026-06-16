@@ -1,3 +1,4 @@
+/*
 package org.rhynohowl.automeow.client;
 
 import com.terraformersmc.modmenu.api.ConfigScreenFactory;
@@ -141,3 +142,4 @@ public class AutomeowModMenu implements ModMenuApi {
         };
     }
 }
+*/

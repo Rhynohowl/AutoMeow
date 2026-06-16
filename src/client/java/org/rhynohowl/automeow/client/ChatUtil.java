@@ -23,7 +23,7 @@ public final class ChatUtil {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
         mc.execute(() -> {
-                mc.getChatListener().handleSystemMessage(
+                mc.gui.chatListener().handleSystemMessage(
                         badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY)), false
                 );
         });

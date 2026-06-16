@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.ChatFormatting;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -59,7 +58,7 @@ public final class UpdateChecker {
 
     public static void checkForUpdateAsync() {
         final String currentModVer = currentModVersion();
-        final String currentMcVer = Minecraft.getInstance().getVersionType();
+        final String currentMcVer = Minecraft.getInstance().getLaunchedVersion();
 
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
@@ -69,7 +68,7 @@ public final class UpdateChecker {
         String url = "https://api.modrinth.com/v2/project/" + MODRINTH_SLUG + "/version";
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .header("User-Agent", "AutoMeow/" + currentModVer + " (MC " + currentMcVer + "; Modrinth update check)")
+                .header("User-Agent", "rhynohowl/automeow/" + currentModVer + " (MC " + currentMcVer + ")")
                 .timeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
                 .build();
 
@@ -124,7 +123,7 @@ public final class UpdateChecker {
                                             .append(Component.literal("(MC " + currentMcVer + ", v" + currentModVer + " → v" + latest + ") ").withStyle(ChatFormatting.GRAY))
                                             .append(link);
 
-                                    mc.getChatListener().handleSystemMessage(msg, false); // local only
+                                    mc.gui.chatListener().handleSystemMessage(msg, false); // local only
                                 });
                                 java.util.concurrent.CompletableFuture
                                         .delayedExecutor(15, java.util.concurrent.TimeUnit.SECONDS)
