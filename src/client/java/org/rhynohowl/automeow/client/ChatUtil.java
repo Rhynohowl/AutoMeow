@@ -23,11 +23,21 @@ public final class ChatUtil {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc == null) return;
         mc.execute(() -> {
+            //? if <26.1 {
             if (mc.inGameHud != null) {
                 mc.inGameHud.getChatHud().addMessage(
                         badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY))
                 );
             }
+            //?} else if <26.2 {
+            /*mc.getChatListener().handleSystemMessage(
+                    badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY)), false
+            );*/
+            //?} else {
+            /*mc.gui.chatListener().handleSystemMessage(
+                    badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY)), false
+            );*/
+            //?}
         });
     }
 

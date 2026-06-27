@@ -120,6 +120,21 @@ public class AutomeowClient implements ClientModInitializer {
 
         String clean = ChatUtil.normaliseChat(raw);
 
+        if (clean.contains("[AutoMeow]")) {
+            return;
+        }
+
+        if (ModState.ON_HYPIXEL.get()) {
+            String myNameEarly = mc.player != null ? mc.player.getGameProfile().name() : null;
+            if (myNameEarly != null) {
+                String rawStripped = raw.replaceAll("§.", "").trim();
+                if (rawStripped.toLowerCase(java.util.Locale.ROOT).startsWith("from")
+                        && rawStripped.contains(myNameEarly + ":")) {
+                    return;
+                }
+            }
+        }
+
         boolean isVanillaWhisper = false;
 
         var whisper_matcher = HpChannel.vanillaWhisperPattern().matcher(clean);

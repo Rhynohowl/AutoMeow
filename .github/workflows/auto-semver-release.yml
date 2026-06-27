@@ -3,7 +3,7 @@ name: auto-semver-release
 on:
   workflow_dispatch: {}
   push:
-    branches: [ main ]          
+    branches: [ main ]
 
 permissions:
   contents: read
@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      JAVA_VERSION: "21"
       MAJOR: "1"               # <- fixed major. change to "2" if I ever push a MAJOR change :3
 
     steps:
@@ -22,11 +21,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Temurin JDK
+      - name: Set up Temurin JDKs
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: |
+            21
+            25
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -34,11 +35,23 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build
-        run: ./gradlew clean build
+      - name: Build all versions
+        run: ./gradlew :1.21.10:build :26.1:build :26.2:build
 
-      - name: Upload Artifact
+      - name: Upload 1.21.10 artifact
         uses: actions/upload-artifact@v7.0.0
         with:
+          path: versions/1.21.10/build/libs/*-1.21.10.jar
           archive: false
-          path: build/libs/*-1.21.10.jar
+
+      - name: Upload 26.1 artifact
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          path: versions/26.1/build/libs/*-26.1.jar
+          archive: false
+
+      - name: Upload 26.2 artifact
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          path: versions/26.2/build/libs/*-26.2.jar
+          archive: false

@@ -1,0 +1,73 @@
+plugins {
+    id "dev.kikugie.stonecutter"
+}
+stonecutter.active "1.21.10"
+
+stonecutter.parameters {
+    def mojang = eval(current.version, ">=26.1")
+
+    replacements.string {
+        direction = mojang
+
+        // imports evil evil evil
+        replace("import net.minecraft.client.MinecraftClient;", "import net.minecraft.client.Minecraft;")
+        replace("import net.minecraft.client.world.ClientWorld;", "import net.minecraft.client.multiplayer.ClientLevel;")
+        replace("import net.minecraft.entity.player.PlayerEntity;", "import net.minecraft.world.entity.player.Player;")
+        replace("import net.minecraft.text.Text;", "import net.minecraft.network.chat.Component;")
+        replace("import net.minecraft.text.MutableText;", "import net.minecraft.network.chat.MutableComponent;")
+        replace("import net.minecraft.text.TextColor;", "import net.minecraft.network.chat.TextColor;")
+        replace("import net.minecraft.text.Style;", "import net.minecraft.network.chat.Style;")
+        replace("import net.minecraft.text.ClickEvent;", "import net.minecraft.network.chat.ClickEvent;")
+        replace("import net.minecraft.text.HoverEvent;", "import net.minecraft.network.chat.HoverEvent;")
+        replace("import net.minecraft.util.Formatting;", "import net.minecraft.ChatFormatting;")
+        replace("import net.minecraft.client.gui.screen.Screen;", "import net.minecraft.client.gui.screens.Screen;")
+        replace("import net.minecraft.particle.ParticleTypes;", "import net.minecraft.core.particles.ParticleTypes;")
+        replace("import net.minecraft.sound.SoundCategory;", "import net.minecraft.sounds.SoundSource;")
+        replace("import net.minecraft.sound.SoundEvents;", "import net.minecraft.sounds.SoundEvents;")
+        replace("import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;",
+                "import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;")
+        replace("net.minecraft.util.math.random.Random", "net.minecraft.util.RandomSource")
+
+        // type / class names
+        replace("MinecraftClient", "Minecraft")
+        replace("ClientWorld", "ClientLevel")
+        replace("PlayerEntity", "Player")
+        replace("ClientCommandManager", "ClientCommands")
+        replace("MutableText", "MutableComponent")
+        replace("SoundCategory", "SoundSource")
+
+        // methods and fields
+        replace("networkHandler", "connection")
+        replace("sendChatCommand", "sendCommand")
+        replace("sendChatMessage", "sendChat")
+        replace("ENTITY_CAT_AMBIENT", "CAT_AMBIENT_BABY")
+        replace("particleManager", "particleEngine")
+        replace(".addParticle", ".createParticle")
+        replace(".formatted(", ".withStyle(")
+        replace(".styled(s ->", ".withStyle(s ->")
+        replace("withUnderline(", "withUnderlined(")
+        replace(".world", ".level")
+        replace("getCurrentServerEntry", "getCurrentServer")
+        replace(".address", ".ip")
+        replace("getSession", "getUser")
+        replace("getUuidOrNull", "getProfileId")
+        replace("getUuid(", "getUUID(")
+        replace("getPlayerByUuid", "getPlayerByUUID")
+        replace(".getPlayers()", ".players()")
+        replace("squaredDistanceTo", "distanceToSqr")
+        replace("runDirectory", "gameDirectory")
+        replace("applyChatDecoration", "decorate")
+    }
+
+    replacements.regex {
+        direction = mojang
+        replace("\\bText\\b", "Component")
+        reverse("\\bComponent\\b", "Text")
+    }
+
+    replacements.regex {
+        direction = mojang
+        replace("\\bFormatting\\.", "ChatFormatting.")
+        reverse("\\bChatFormatting\\.", "Formatting.")
+    }
+}

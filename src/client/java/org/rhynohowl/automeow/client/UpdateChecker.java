@@ -59,7 +59,13 @@ public final class UpdateChecker {
 
     public static void checkForUpdateAsync() {
         final String currentModVer = currentModVersion();
+        //? if <26.1 {
         final String currentMcVer = MinecraftClient.getInstance().getGameVersion();
+        //?} else if <26.2 {
+        /*final String currentMcVer = MinecraftClient.getInstance().getVersionType();*/
+        //?} else {
+        /*final String currentMcVer = MinecraftClient.getInstance().getLaunchedVersion();*/
+        //?}
 
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
@@ -69,7 +75,7 @@ public final class UpdateChecker {
         String url = "https://api.modrinth.com/v2/project/" + MODRINTH_SLUG + "/version";
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
-                .header("User-Agent", "AutoMeow/" + currentModVer + " (MC " + currentMcVer + "; Modrinth update check)")
+                .header("User-Agent", "rhynohowl/automeow/" + currentModVer + " (MC " + currentMcVer + ")")
                 .timeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
                 .build();
 
@@ -124,7 +130,13 @@ public final class UpdateChecker {
                                             .append(Text.literal("(MC " + currentMcVer + ", v" + currentModVer + " → v" + latest + ") ").formatted(Formatting.GRAY))
                                             .append(link);
 
+                                    //? if <26.1 {
                                     mc.inGameHud.getChatHud().addMessage(msg); // local only
+                                    //?} else if <26.2 {
+                                    /*mc.getChatListener().handleSystemMessage(msg, false); // local only*/
+                                    //?} else {
+                                    /*mc.gui.chatListener().handleSystemMessage(msg, false); // local only*/
+                                    //?}
                                 });
                                 java.util.concurrent.CompletableFuture
                                         .delayedExecutor(15, java.util.concurrent.TimeUnit.SECONDS)
