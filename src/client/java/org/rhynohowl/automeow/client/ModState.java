@@ -18,7 +18,7 @@ public final class ModState {
     public static final AtomicBoolean manualSendPending = new AtomicBoolean(false);
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean ON_HYPIXEL = new AtomicBoolean(false);
-    public static final java.util.concurrent.atomic.AtomicBoolean APPEND_FACE = new java.util.concurrent.atomic.AtomicBoolean(false);
+    public static final java.util.concurrent.atomic.AtomicBoolean APPEND_FACE = new java.util.concurrent.atomic.AtomicBoolean(true);
     public static final AtomicLong echoUntil = new AtomicLong(0);     // hard anti-echo
     public static final AtomicLong cooldownUntil = new AtomicLong(0); // OR-gate timer
 
@@ -29,6 +29,23 @@ public final class ModState {
         for (HpChannel ch : HpChannel.values()) {
             msgsSinceReply.put(ch, new AtomicInteger(MY_MESSAGES_REQUIRED)); // start "ready"
         }
+    }
+
+    public static final java.util.EnumMap<HpChannel, AtomicBoolean> channelEnabled =
+            new java.util.EnumMap<>(HpChannel.class);
+
+    static {
+        for (HpChannel ch : HpChannel.values()) {
+            channelEnabled.put(ch, new AtomicBoolean(true)); // every channel on by default
+        }
+    }
+
+    public static boolean isChannelEnabled(HpChannel ch) {
+        return channelEnabled.get(ch).get();
+    }
+
+    public static void setChannelEnabled(HpChannel ch, boolean value) {
+        channelEnabled.get(ch).set(value);
     }
 
     public static AtomicInteger counter(HpChannel ch) {

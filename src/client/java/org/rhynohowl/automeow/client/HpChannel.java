@@ -5,6 +5,17 @@ import java.util.regex.Pattern;
 public enum HpChannel {
     ALL, GUILD, PARTY, COOP, PM, IGNORE;
 
+    public String displayName() {
+        switch (this) {
+            case ALL: return "Public";
+            case GUILD: return "Guild";
+            case PARTY: return "Party";
+            case COOP: return "Co-op";
+            case PM: return "PM";
+            default: return "Ignore";
+        }
+    }
+
     private static final Pattern VANILLA_WHISPER_IN = Pattern.compile("^\\s*<?([A-Za-z0-9_]{3,16})>?\\s+whispers\\s+to\\s+you\\s*:", Pattern.CASE_INSENSITIVE);
 
     private static final java.util.regex.Pattern LEADING_WORD =

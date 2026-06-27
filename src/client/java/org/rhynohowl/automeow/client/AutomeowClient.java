@@ -148,6 +148,11 @@ public class AutomeowClient implements ClientModInitializer {
 
         if (ch == HpChannel.IGNORE) return;
 
+        if (!ModState.isChannelEnabled(ch)) {
+            ChatUtil.debug("blocked: channel disabled chan=" + ch);
+            return;
+        }
+
         // play SFX at play who meows & self
         if (MEOW.matcher(raw).find()) {
             PlayerEntity src = CatCue.resolveSender(mc, sender, raw);

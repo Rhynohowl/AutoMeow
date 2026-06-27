@@ -65,4 +65,16 @@ public final class ChatUtil {
                 .append(Text.literal(" G " + ModState.counter(HpChannel.GUILD).get() + "/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
                 .append(Text.literal(" C " + ModState.counter(HpChannel.COOP).get() + "/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY));
     }
+
+    public static MutableText channelsStatusLine() {
+        HpChannel[] shown = { HpChannel.ALL, HpChannel.GUILD, HpChannel.PARTY, HpChannel.COOP, HpChannel.PM };
+        MutableText result = badge();
+        for (int i = 0; i < shown.length; i++) {
+            boolean on = ModState.isChannelEnabled(shown[i]);
+            result = result
+                    .append(Text.literal((i == 0 ? "" : " | ") + shown[i].displayName() + ": ").formatted(Formatting.GRAY))
+                    .append(Text.literal(on ? "ON" : "OFF").formatted(on ? Formatting.GREEN : Formatting.RED));
+        }
+        return result;
+    }
 }

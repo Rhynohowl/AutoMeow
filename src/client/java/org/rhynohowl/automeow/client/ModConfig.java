@@ -21,6 +21,11 @@ public final class ModConfig {
         boolean appendFace = false;
         boolean playSound = true;
         boolean heartsEffect = true;
+        boolean channelPublic = true;
+        boolean channelGuild = true;
+        boolean channelParty = true;
+        boolean channelCoop = true;
+        boolean channelPm = true;
         float baseVolume    = 0.8f;
         float volumeJitter  = 0.15f;
         float pitchJitter   = 0.10f;
@@ -49,6 +54,11 @@ public final class ModConfig {
             ModState.APPEND_FACE.set(CONFIG.appendFace);
             ModState.PLAY_SOUND.set(CONFIG.playSound);
             ModState.HEARTS_EFFECT.set(CONFIG.heartsEffect);
+            ModState.setChannelEnabled(HpChannel.ALL, CONFIG.channelPublic);
+            ModState.setChannelEnabled(HpChannel.GUILD, CONFIG.channelGuild);
+            ModState.setChannelEnabled(HpChannel.PARTY, CONFIG.channelParty);
+            ModState.setChannelEnabled(HpChannel.COOP, CONFIG.channelCoop);
+            ModState.setChannelEnabled(HpChannel.PM, CONFIG.channelPm);
 
             // reply text: allow anything from disk; enforce "mer" only on user edits
             if (!ModState.setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow")) {
@@ -72,6 +82,11 @@ public final class ModConfig {
             CONFIG.appendFace = ModState.APPEND_FACE.get();
             CONFIG.playSound = ModState.PLAY_SOUND.get();
             CONFIG.heartsEffect = ModState.HEARTS_EFFECT.get();
+            CONFIG.channelPublic = ModState.isChannelEnabled(HpChannel.ALL);
+            CONFIG.channelGuild = ModState.isChannelEnabled(HpChannel.GUILD);
+            CONFIG.channelParty = ModState.isChannelEnabled(HpChannel.PARTY);
+            CONFIG.channelCoop = ModState.isChannelEnabled(HpChannel.COOP);
+            CONFIG.channelPm = ModState.isChannelEnabled(HpChannel.PM);
             Files.writeString(
                     CONFIG_PATH, GSON.toJson(CONFIG),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING

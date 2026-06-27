@@ -7,6 +7,7 @@ import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import me.shedaniel.clothconfig2.impl.builders.DropdownMenuBuilder;
+import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -136,6 +137,45 @@ public class AutomeowModMenu implements ModMenuApi {
                             .setTooltip(Text.literal("Spawns the hearts effect around the player who meowed."))
                             .build()
             );
+
+            // Channels enable/disable per chat channel
+            SubCategoryBuilder channelsCategory = eb.startSubCategory(Text.literal("Channels")).setExpanded(false);
+            channelsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Public"), ModState.isChannelEnabled(HpChannel.ALL))
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.setChannelEnabled(HpChannel.ALL, val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Reply to cat-sounds in public/all chat."))
+                            .build()
+            );
+            channelsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Guild"), ModState.isChannelEnabled(HpChannel.GUILD))
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.setChannelEnabled(HpChannel.GUILD, val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Reply to cat-sounds in guild chat."))
+                            .build()
+            );
+            channelsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Party"), ModState.isChannelEnabled(HpChannel.PARTY))
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.setChannelEnabled(HpChannel.PARTY, val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Reply to cat-sounds in party chat."))
+                            .build()
+            );
+            channelsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Co-op"), ModState.isChannelEnabled(HpChannel.COOP))
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.setChannelEnabled(HpChannel.COOP, val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Reply to cat-sounds in co-op chat."))
+                            .build()
+            );
+            channelsCategory.add(
+                    eb.startBooleanToggle(Text.literal("PM (whispers)"), ModState.isChannelEnabled(HpChannel.PM))
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.setChannelEnabled(HpChannel.PM, val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Reply to cat-sounds in private messages."))
+                            .build()
+            );
+            general.addEntry(channelsCategory.build());
 
             return builder.build();
         };

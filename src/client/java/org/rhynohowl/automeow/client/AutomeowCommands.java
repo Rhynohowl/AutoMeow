@@ -132,6 +132,58 @@ public final class AutomeowCommands {
                                         return 1;
                                     }))
                             )
+                            .then(literal("channels")
+                                    // `/automeow channels` -> status overview
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(ChatUtil.channelsStatusLine());
+                                        return 1;
+                                    })
+                                    .then(literal("public").executes(ctx -> {
+                                        boolean newValue = !ModState.isChannelEnabled(HpChannel.ALL);
+                                        ModState.setChannelEnabled(HpChannel.ALL, newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal(HpChannel.ALL.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    }))
+                                    .then(literal("guild").executes(ctx -> {
+                                        boolean newValue = !ModState.isChannelEnabled(HpChannel.GUILD);
+                                        ModState.setChannelEnabled(HpChannel.GUILD, newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal(HpChannel.GUILD.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    }))
+                                    .then(literal("party").executes(ctx -> {
+                                        boolean newValue = !ModState.isChannelEnabled(HpChannel.PARTY);
+                                        ModState.setChannelEnabled(HpChannel.PARTY, newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal(HpChannel.PARTY.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    }))
+                                    .then(literal("coop").executes(ctx -> {
+                                        boolean newValue = !ModState.isChannelEnabled(HpChannel.COOP);
+                                        ModState.setChannelEnabled(HpChannel.COOP, newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal(HpChannel.COOP.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    }))
+                                    .then(literal("pm").executes(ctx -> {
+                                        boolean newValue = !ModState.isChannelEnabled(HpChannel.PM);
+                                        ModState.setChannelEnabled(HpChannel.PM, newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal(HpChannel.PM.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    }))
+                            )
                             .then(literal("stats").executes(ctx -> {
                                 ctx.getSource().sendFeedback(
                                         ChatUtil.badge()
