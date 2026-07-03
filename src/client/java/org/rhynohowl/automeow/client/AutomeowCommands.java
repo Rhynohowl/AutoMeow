@@ -183,6 +183,15 @@ public final class AutomeowCommands {
                                                         .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
                                         return newValue ? 1 : 0;
                                     }))
+                                    .then(literal("officer").executes(ctx -> {
+                                        boolean newValue = !ModState.isChannelEnabled(HpChannel.OFFICER);
+                                        ModState.setChannelEnabled(HpChannel.OFFICER, newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal(HpChannel.OFFICER.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    }))
                             )
                             .then(literal("stats").executes(ctx -> {
                                 ctx.getSource().sendFeedback(

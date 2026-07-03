@@ -3,7 +3,7 @@ package org.rhynohowl.automeow.client;
 import java.util.regex.Pattern;
 
 public enum HpChannel {
-    ALL, GUILD, PARTY, COOP, PM, IGNORE;
+    ALL, GUILD, PARTY, COOP, PM, OFFICER, IGNORE;
 
     public String displayName() {
         switch (this) {
@@ -12,6 +12,7 @@ public enum HpChannel {
             case PARTY: return "Party";
             case COOP: return "Co-op";
             case PM: return "PM";
+            case OFFICER: return "Officer";
             default: return "Ignore";
         }
     }
@@ -45,6 +46,7 @@ public enum HpChannel {
                 case "guild":   return GUILD;
                 case "coop":    return COOP;
                 case "from":    return PM;
+                case "officer": return OFFICER;
                 case "to":      return IGNORE;
             }
         }

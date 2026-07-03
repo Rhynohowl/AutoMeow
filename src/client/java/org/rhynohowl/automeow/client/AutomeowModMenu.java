@@ -175,6 +175,13 @@ public class AutomeowModMenu implements ModMenuApi {
                             .setTooltip(Text.literal("Reply to cat-sounds in private messages."))
                             .build()
             );
+            channelsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Officer"), ModState.isChannelEnabled(HpChannel.OFFICER))
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.setChannelEnabled(HpChannel.OFFICER, val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Reply to cat-sounds in officer chat."))
+                            .build()
+            );
             general.addEntry(channelsCategory.build());
 
             return builder.build();

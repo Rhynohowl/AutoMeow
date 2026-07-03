@@ -19,7 +19,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:meow+|mrr+p+|mr+ow+|mr+aow+|mer+|nya+~*|purr+|bark+|woof+|wr+uff+|grr+)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+|m+r+o+w+|m+r+a+o+w+|m+e+r+|n+y+a+~*|p+u+rr+|b+a+r+k+|w+oo+f+|w+r+u+ff+|g+rr+)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     @Override
     public void onInitializeClient() {
@@ -51,11 +51,12 @@ public class AutomeowClient implements ClientModInitializer {
             String head = rawCmd.split("\\s+", 2)[0].toLowerCase(java.util.Locale.ROOT);
 
             HpChannel ch = switch (head) {
-                case "pc", "partychat" -> HpChannel.PARTY;
-                case "gc", "guildchat" -> HpChannel.GUILD;
+                case "pc" -> HpChannel.PARTY;
+                case "gc", "guild chat" -> HpChannel.GUILD;
                 case "cc", "coopchat"  -> HpChannel.COOP;
-                case "ac", "allchat"   -> HpChannel.ALL;
+                case "ac"   -> HpChannel.ALL;
                 case "r", "msg", "tell", "w" -> HpChannel.PM;
+                case "oc" -> HpChannel.OFFICER;
                 default -> null;
             };
             if (ch == null) return;
@@ -272,6 +273,7 @@ public class AutomeowClient implements ClientModInitializer {
                     case PARTY -> "pc " + out;
                     case COOP -> "cc " + out;
                     case PM -> "r " + out;
+                    case OFFICER -> "oc" + out;
                     case ALL -> "ac " + out;
                     case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
                 };

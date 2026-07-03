@@ -26,6 +26,7 @@ public final class ModConfig {
         boolean channelParty = true;
         boolean channelCoop = true;
         boolean channelPm = true;
+        boolean channelOfficer = true;
         float baseVolume    = 0.8f;
         float volumeJitter  = 0.15f;
         float pitchJitter   = 0.10f;
@@ -59,6 +60,7 @@ public final class ModConfig {
             ModState.setChannelEnabled(HpChannel.PARTY, CONFIG.channelParty);
             ModState.setChannelEnabled(HpChannel.COOP, CONFIG.channelCoop);
             ModState.setChannelEnabled(HpChannel.PM, CONFIG.channelPm);
+            ModState.setChannelEnabled(HpChannel.OFFICER, CONFIG.channelOfficer);
 
             // reply text: allow anything from disk; enforce "mer" only on user edits
             if (!ModState.setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow")) {
@@ -87,6 +89,7 @@ public final class ModConfig {
             CONFIG.channelParty = ModState.isChannelEnabled(HpChannel.PARTY);
             CONFIG.channelCoop = ModState.isChannelEnabled(HpChannel.COOP);
             CONFIG.channelPm = ModState.isChannelEnabled(HpChannel.PM);
+            CONFIG.channelOfficer = ModState.isChannelEnabled(HpChannel.OFFICER);
             Files.writeString(
                     CONFIG_PATH, GSON.toJson(CONFIG),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
