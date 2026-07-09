@@ -1,29 +1,26 @@
 package org.rhynohowl.automeow.client;
 
 import net.fabricmc.loader.api.FabricLoader;
-import java.lang.reflect.Method;
+import net.minecraft.text.TextColor;
 
 public final class ChromaHelper {
-    private static final int AARON_CHROMA_SENTINEL = 0xAA5500;
+    private static final TextColor SKYHANNI_CHROMA = makeNamedColor(0xFFFFFF, "chroma");
 
-    public static boolean hasAaronMod() {
-        FabricLoader fabricLoader = FabricLoader.getInstance();
-        return fabricLoader.isModLoaded("aaron-mod") || fabricLoader.isModLoaded("azureaaron"); // cover both ids
-    }
-
-    public static boolean aaronChromaAvailable() {
-        if (!hasAaronMod()) return false;
+    private static TextColor makeNamedColor(int rgb, String name) {
         try {
-            Class<?> chromaTextClass = Class.forName("net.azureaaron.mod.features.ChromaText");
-            Method chromaAvailableMethod = chromaTextClass.getMethod("chromaColourAvailable");
-            Object result = chromaAvailableMethod.invoke(null);
-            return result instanceof Boolean && (Boolean) result;
+            var constructor = TextColor.class.getDeclaredConstructor(int.class, String.class);
+            constructor.setAccessible(true);
+            return (TextColor) constructor.newInstance(rgb, name);
         } catch (Throwable ignored) {
-            return false;
+            return TextColor.fromRgb(rgb);
         }
     }
 
-    public static int getChromaSentinel() {
-        return AARON_CHROMA_SENTINEL;
+    public static boolean hasSkyhanni() {
+        return FabricLoader.getInstance().isModLoaded("skyhanni");
+    }
+
+    public static TextColor getChromaTextColor() {
+        return SKYHANNI_CHROMA;
     }
 }

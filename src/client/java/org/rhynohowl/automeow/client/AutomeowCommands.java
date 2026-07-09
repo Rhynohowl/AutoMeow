@@ -39,14 +39,9 @@ public final class AutomeowCommands {
                                 return 1;
                             }))
                             .then(literal("chroma").executes(ctx -> {
-                                if (!ChromaHelper.hasAaronMod()) {
+                                if (!ChromaHelper.hasSkyhanni()) {
                                     ctx.getSource().sendFeedback(ChatUtil.badge()
-                                            .append(Text.literal("Aaron-mod not found").formatted(Formatting.RED)));
-                                    return 0;
-                                }
-                                if (!ChromaHelper.aaronChromaAvailable()) {
-                                    ctx.getSource().sendFeedback(ChatUtil.badge()
-                                            .append(Text.literal("Chroma pack is disabled").formatted(Formatting.YELLOW)));
+                                            .append(Text.literal("SkyHanni not found").formatted(Formatting.RED)));
                                     return 0;
                                 }
                                 boolean newValue = !ModState.CHROMA_WANTED.get();

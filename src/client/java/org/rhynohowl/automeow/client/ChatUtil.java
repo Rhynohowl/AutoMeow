@@ -43,12 +43,11 @@ public final class ChatUtil {
 
     // [AutoMeow] Prefix
     public static MutableText badge() {
-        boolean chroma = ModState.CHROMA_WANTED.get() && ChromaHelper.aaronChromaAvailable();
+        boolean chroma = ModState.CHROMA_WANTED.get() && ChromaHelper.hasSkyhanni();
 
         MutableText name = Text.literal("AutoMeow")
                 .styled(s -> s.withBold(false)
-                        // Aaron-mods chroma shader, if not installed then default to pastel pink
-                        .withColor(TextColor.fromRgb(chroma ? ChromaHelper.getChromaSentinel() : PASTEL_PINK)));
+                        .withColor(chroma ? ChromaHelper.getChromaTextColor() : TextColor.fromRgb(PASTEL_PINK)));
 
         return Text.literal("[").formatted(Formatting.GRAY)
                 .append(name)

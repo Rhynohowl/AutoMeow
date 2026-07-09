@@ -50,17 +50,19 @@ public class AutomeowModMenu implements ModMenuApi {
                             .build()
             );
 
-            // Chroma toggle (only useful if Aaron-mod is present)
-            boolean canChroma = ChromaHelper.aaronChromaAvailable();
+            // Chroma toggle (only useful if Skyhanni is present)
+            boolean canChroma = ChromaHelper.hasSkyhanni();
             AbstractConfigListEntry<Boolean> chromaEntry =
-                    eb.startBooleanToggle(Text.literal("Chroma badge (Aaron-mod)"),
+                    eb.startBooleanToggle(Text.literal("Chroma badge (Skyhanni)"),
                                     ModState.CHROMA_WANTED.get() && canChroma)
                             .setDefaultValue(false)
                             .setSaveConsumer(val -> ModState.CHROMA_WANTED.set(val && canChroma))
                             .setTooltip(
-                                    Text.literal("Uses Aaron-mod's chroma_text pack for an animated [AutoMeow] badge.")
-                                            .append(Text.literal(canChroma ? "" : "\n(Not available: Aaron-mod or pack disabled)")
-                                                    .formatted(Formatting.GRAY))
+                                    Text.literal("Uses Skyhanni's chroma_text pack for an animated [AutoMeow] badge.")
+                                            .append(Text.literal("\nRequires Skyhanni installed with its own chroma enabled."))
+                                                    .formatted(Formatting.GRAY)
+                                            .append(Text.literal(canChroma ? "" : "\n(Not available: Skyhanni not installed)")
+                                                    .formatted(Formatting.RED))
                             )
                             .build();
             chromaEntry.setEditable(canChroma);
