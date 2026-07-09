@@ -19,20 +19,24 @@ Works on vanilla servers and Hypixel (no server mod needed).
 
 ## Commands
 
-/automeow | show current status
-/automeow toggle | enable/disable
-/automeow on | enable
-/automeow off | disable
-/automeow chroma | toggle chroma badge (requires Skyhanni)
-/automeow hearts | enable/disable heart particles
-/automeow sound | enable/disable cat meow sound
-/automeow face | enable/disable :3 at end of reply message
-/automeow channels | enable/disable specific hypixel channels
-/automeow stats | view total meows sent
-/automeow say | select reply preset
+| Command              | Description                                                     |
+|----------------------|-----------------------------------------------------------------|
+| `/automeow`          | Show current status                                             |
+| `/automeow toggle`   | Enable/disable                                                  |
+| `/automeow on`       | Enable                                                          |
+| `/automeow off`      | Disable                                                         |
+| `/automeow chroma`   | Toggle chroma badge (requires Skyhanni)                         |
+| `/automeow hearts`   | Enable/disable heart particles                                  |
+| `/automeow sound`    | Enable/disable cat meow sound                                   |
+| `/automeow face`     | Enable/disable :3 at end of reply message                       |
+| `/automeow channels` | Enable/disable specific hypixel channels                        |
+| `/automeow stats`    | View total meows sent                                           |
+| `/automeow say`      | Select reply preset                                             |
 
 > The very first “meow” after joining or changing lobby is answered instantly;  
 > after that, AutoMeow waits until **you** have chatted **3** more times.
+
+> ModMenu is also supported. I'd recommend using that over the commands system as it is way easier to navigate.
 
 ---
 
