@@ -19,7 +19,9 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+|m+r+o+w+|m+r+a+o+w+|m+e+w+|n+y+a+~*|p+u+rr+|b+a+r+k+|w+oo+f+|w+r+u+ff+|g+rr+|a+r+f+|a+w+o+|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r+u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
+
+    private static final Pattern SENDER_PREFIX = Pattern.compile("^.*?[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
     @Override
     public void onInitializeClient() {
@@ -154,7 +156,10 @@ public class AutomeowClient implements ClientModInitializer {
             return;
         }
 
-        // play SFX at play who meows & self
+        java.util.regex.Matcher prefixMatcher = SENDER_PREFIX.matcher(clean);
+        String meowTarget = prefixMatcher.find() ? clean.substring(prefixMatcher.end()).trim() : clean;
+
+        // play SFX at player who meows & self
         if (MEOW.matcher(raw).find()) {
             PlayerEntity src = CatCue.resolveSender(mc, sender, raw);
             if (src != null) {
@@ -201,8 +206,8 @@ public class AutomeowClient implements ClientModInitializer {
             return;
         }
 
-        if (!MEOW.matcher(clean).find()) {
-            ChatUtil.debug("ignored: no meow in: '" + clean + "'");
+        if (!MEOW.matcher(meowTarget).find()) {
+            ChatUtil.debug("ignored: no meow in: '" + meowTarget + "'");
             return;
         }
 
@@ -273,7 +278,7 @@ public class AutomeowClient implements ClientModInitializer {
                     case PARTY -> "pc " + out;
                     case COOP -> "cc " + out;
                     case PM -> "r " + out;
-                    case OFFICER -> "oc" + out;
+                    case OFFICER -> "oc " + out;
                     case ALL -> "ac " + out;
                     case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
                 };
