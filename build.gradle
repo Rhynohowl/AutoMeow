@@ -44,7 +44,7 @@ fabricApi {
 }
 
 repositories {
-    maven { url = "https://maven.terraformersmc.com/releases/" } // Mod Menu
+    maven { url = "https://maven.gnomecraft.net/repository/maven-public/" } // Mod Menu
     maven { url = "https://maven.shedaniel.me/" }                // Cloth Config
 }
 
