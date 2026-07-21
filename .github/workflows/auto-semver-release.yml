@@ -36,7 +36,11 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build all versions
-        run: ./gradlew :1.21.10:build :26.1:build :26.2:build
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 3
+          max_attempts: 3
+          command: ./gradlew :1.21.10:build :26.1:build :26.2:build
 
       - name: Upload 1.21.10 artifact
         uses: actions/upload-artifact@v7.0.0
