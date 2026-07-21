@@ -19,6 +19,8 @@ public enum HpChannel {
 
     private static final Pattern VANILLA_WHISPER_IN = Pattern.compile("^\\s*<?([A-Za-z0-9_]{3,16})>?\\s+whispers\\s+to\\s+you\\s*:", Pattern.CASE_INSENSITIVE);
 
+    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)+.*?[A-Za-z0-9_]{3,16}\\s*(?:\\[[^\\]]*\\]\\s*)*\\S*\\s*:");
+
     private static final java.util.regex.Pattern LEADING_WORD =
             java.util.regex.Pattern.compile("^\\s*([A-Za-z]+(?:[-\\p{Pd}][A-Za-z]+)?)");
 
@@ -26,7 +28,7 @@ public enum HpChannel {
         return VANILLA_WHISPER_IN;
     }
 
-    private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)+.*?[A-Za-z0-9_]{3,16}\\s*(?:\\[[^\\]]*\\]\\s*)*\\S*\\s*:");
+    private static final Pattern VANILLA_CHAT = Pattern.compile("^\\s*<[A-Za-z0-9_]{3,16}>\\s");
 
     public static HpChannel detect(String raw) {
         if (raw == null) return ALL;
@@ -52,6 +54,7 @@ public enum HpChannel {
         }
 
         if (ALL_CHAT.matcher(strippedFormatting).find()) return ALL;
+        if (VANILLA_CHAT.matcher(strippedFormatting).find()) return ALL;
         return IGNORE;
     }
 }

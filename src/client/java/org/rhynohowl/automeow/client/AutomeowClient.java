@@ -21,7 +21,7 @@ public class AutomeowClient implements ClientModInitializer {
     // Match whole word "meow" (not case-sensitive)
     private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r+u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern SENDER_PREFIX = Pattern.compile("^.*?[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
+    private static final Pattern SENDER_PREFIX = Pattern.compile("^[^:]*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
     @Override
     public void onInitializeClient() {
@@ -123,7 +123,15 @@ public class AutomeowClient implements ClientModInitializer {
 
         String clean = ChatUtil.normaliseChat(raw);
 
-        if (clean.contains("[AutoMeow]")) {
+        if (clean.startsWith("[AutoMeow]")) {
+            return;
+        }
+
+        if (clean.startsWith("[NPC]")) {
+            return;
+        }
+
+        if (clean.startsWith("[BOSS]")) {
             return;
         }
 
@@ -156,8 +164,14 @@ public class AutomeowClient implements ClientModInitializer {
             return;
         }
 
-        java.util.regex.Matcher prefixMatcher = SENDER_PREFIX.matcher(clean);
-        String meowTarget = prefixMatcher.find() ? clean.substring(prefixMatcher.end()).trim() : clean;
+        String meowTarget;
+        if (clean.startsWith("<")) {
+            int end = clean.indexOf('>');
+            meowTarget = end >= 0 ? clean.substring(end + 1).trim() : clean;
+        } else {
+            java.util.regex.Matcher prefixMatcher = SENDER_PREFIX.matcher(clean);
+            meowTarget = prefixMatcher.find() ? clean.substring(prefixMatcher.end()).trim() : clean;
+        }
 
         // play SFX at player who meows & self
         if (MEOW.matcher(raw).find()) {
@@ -182,7 +196,8 @@ public class AutomeowClient implements ClientModInitializer {
 
         boolean isMe =
                 (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
-                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find());
+                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find()) ||
+                        (myName != null && clean.startsWith("<" + myName + ">"));
 
         if (isMe) {
             if (ModState.skipNextOwnIncrement.getAndSet(false)) {
