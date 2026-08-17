@@ -19,7 +19,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r+u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r+u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|a+w+r+u+f+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern SENDER_PREFIX = Pattern.compile("^[^:]*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
