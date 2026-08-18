@@ -21,6 +21,8 @@ public enum HpChannel {
 
     private static final Pattern ALL_CHAT = Pattern.compile("^\\s*(?:\\[[^\\]]*\\]\\s*)+.*?[A-Za-z0-9_]{3,16}\\s*(?:\\[[^\\]]*\\]\\s*)*\\S*\\s*:");
 
+    public static final Pattern ALL_CHAT_LOOSE = Pattern.compile("^.*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
+
     private static final java.util.regex.Pattern LEADING_WORD =
             java.util.regex.Pattern.compile("^\\s*([A-Za-z]+(?:[-\\p{Pd}][A-Za-z]+)?)");
 

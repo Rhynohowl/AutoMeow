@@ -81,12 +81,12 @@ public class AutomeowClient implements ClientModInitializer {
         ClientReceiveMessageEvents.CHAT.register(
                 (message, signedMessage, sender, params, ts) -> {
                     Text decorated = params.applyChatDecoration(message);
-                    MinecraftClient.getInstance().execute(() -> handleIncoming(decorated, sender));
+                    MinecraftClient.getInstance().execute(() -> handleIncoming(decorated, sender, false));
                 }
         );
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (overlay) return;
-            MinecraftClient.getInstance().execute(() -> handleIncoming(message, null));
+            MinecraftClient.getInstance().execute(() -> handleIncoming(message, null, true));
         });
 
         // Reset counter on lobby/world change
@@ -111,7 +111,7 @@ public class AutomeowClient implements ClientModInitializer {
         ModState.ON_HYPIXEL.set(hypixel);
     }
 
-    private void handleIncoming(Text message, GameProfile sender) {
+    private void handleIncoming(Text message, GameProfile sender, boolean isSystemMessage) {
         if (!ModState.ENABLED.get()) { ChatUtil.debug("blocked: disabled"); return; }
 
         MinecraftClient mc = MinecraftClient.getInstance();
@@ -125,6 +125,19 @@ public class AutomeowClient implements ClientModInitializer {
 
         if (clean.startsWith("[AutoMeow]")) {
             return;
+        }
+
+        if (isSystemMessage) {
+            if (ModState.ON_HYPIXEL.get()) {
+                if (!HpChannel.vanillaWhisperPattern().matcher(clean).find()
+                        && !clean.toLowerCase(java.util.Locale.ROOT).startsWith("from")) {
+                    return;
+                }
+            } else {
+                if (!HpChannel.ALL_CHAT_LOOSE.matcher(clean).find()) {
+                    return;
+                }
+            }
         }
 
         if (clean.startsWith("[NPC]")) {
@@ -155,7 +168,12 @@ public class AutomeowClient implements ClientModInitializer {
             ChatUtil.debug("vanilla pm from=" + lastWhisperFrom);
         }
 
-        HpChannel ch = HpChannel.detect(clean);
+        HpChannel ch;
+        if (isSystemMessage && !ModState.ON_HYPIXEL.get()) {
+            ch = HpChannel.ALL;
+        } else {
+            ch = HpChannel.detect(clean);
+        }
 
         if (ch == HpChannel.IGNORE) return;
 
