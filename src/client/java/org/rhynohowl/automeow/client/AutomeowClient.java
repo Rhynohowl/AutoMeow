@@ -128,13 +128,12 @@ public class AutomeowClient implements ClientModInitializer {
         }
 
         if (isSystemMessage) {
-            if (ModState.ON_HYPIXEL.get()) {
-                if (!HpChannel.vanillaWhisperPattern().matcher(clean).find()
-                        && !clean.toLowerCase(java.util.Locale.ROOT).startsWith("from")) {
-                    return;
-                }
-            } else {
-                if (!HpChannel.ALL_CHAT_LOOSE.matcher(clean).find()) {
+            if (!ModState.ON_HYPIXEL.get()) {
+                boolean isWhisper = HpChannel.vanillaWhisperPattern().matcher(clean).find()
+                        || clean.toLowerCase(java.util.Locale.ROOT).startsWith("from");
+                boolean isLooseChat = HpChannel.ALL_CHAT_LOOSE.matcher(clean).find();
+
+                if (!isWhisper && !isLooseChat) {
                     return;
                 }
             }
