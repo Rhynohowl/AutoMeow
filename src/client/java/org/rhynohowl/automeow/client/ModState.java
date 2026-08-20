@@ -61,6 +61,7 @@ public final class ModState {
     public static final java.util.List<String> REPLY_PRESETS = java.util.List.of(
             "meow",
             "mrrp",
+            "mrrrp",
             "mrow",
             "mrraow",
             "mew",
