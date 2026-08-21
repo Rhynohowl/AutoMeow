@@ -71,7 +71,10 @@ public final class ModState {
             "woof",
             "wruff",
             "grrr",
-            "arf"
+            "arf",
+            "awoo",
+            "awrf",
+            "awruf"
     );
 
     public static void incrementReplyCount() {
