@@ -27,6 +27,10 @@ public final class ModConfig {
         boolean channelCoop = true;
         boolean channelPm = true;
         boolean channelOfficer = true;
+        boolean catfactParty = true;
+        boolean catfactGuild = true;
+        boolean catfactPM = true;
+        boolean catfactSelfOnly = true;
         float baseVolume    = 0.8f;
         float volumeJitter  = 0.15f;
         float pitchJitter   = 0.10f;
@@ -61,6 +65,10 @@ public final class ModConfig {
             ModState.setChannelEnabled(HpChannel.COOP, CONFIG.channelCoop);
             ModState.setChannelEnabled(HpChannel.PM, CONFIG.channelPm);
             ModState.setChannelEnabled(HpChannel.OFFICER, CONFIG.channelOfficer);
+            ModState.CATFACT_PARTY.set(CONFIG.catfactParty);
+            ModState.CATFACT_GUILD.set(CONFIG.catfactGuild);
+            ModState.CATFACT_PM.set(CONFIG.catfactPM);
+            ModState.CATFACT_SELF_ONLY.set(CONFIG.catfactSelfOnly);
 
             // reply text: allow anything from disk; enforce "mer" only on user edits
             if (!ModState.setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow")) {
@@ -90,6 +98,10 @@ public final class ModConfig {
             CONFIG.channelCoop = ModState.isChannelEnabled(HpChannel.COOP);
             CONFIG.channelPm = ModState.isChannelEnabled(HpChannel.PM);
             CONFIG.channelOfficer = ModState.isChannelEnabled(HpChannel.OFFICER);
+            CONFIG.catfactParty = ModState.CATFACT_PARTY.get();
+            CONFIG.catfactGuild = ModState.CATFACT_GUILD.get();
+            CONFIG.catfactPM = ModState.CATFACT_PM.get();
+            CONFIG.catfactSelfOnly = ModState.CATFACT_SELF_ONLY.get();
             Files.writeString(
                     CONFIG_PATH, GSON.toJson(CONFIG),
                     StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING

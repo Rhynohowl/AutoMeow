@@ -83,6 +83,100 @@ public final class AutomeowCommands {
                                         return 1;
                                     }))
                             )
+                            .then(literal("catfact")
+                                    .then(literal("party")
+                                            .executes(ctx -> {
+                                                boolean newValue = !ModState.CATFACT_PARTY.get();
+                                                ModState.CATFACT_PARTY.set(newValue);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                        .append(Text.literal("Cat Fact (Party) " + (newValue ? "ON" : "OFF"))
+                                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                return newValue ? 1 : 0;
+                                            })
+                                            .then(literal("on").executes(ctx -> {
+                                                ModState.CATFACT_PARTY.set(true);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (Party) ON").formatted(Formatting.GREEN)));
+                                                return 1;
+                                            }))
+                                            .then(literal("off").executes(ctx -> {
+                                                ModState.CATFACT_PARTY.set(false);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (Party) OFF").formatted(Formatting.RED)));
+                                                return 1;
+                                            }))
+                                    )
+                                    .then(literal("guild")
+                                            .executes(ctx -> {
+                                                boolean newValue = !ModState.CATFACT_GUILD.get();
+                                                ModState.CATFACT_GUILD.set(newValue);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                        .append(Text.literal("Cat Fact (Guild) " + (newValue ? "ON" : "OFF"))
+                                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                return newValue ? 1 : 0;
+                                            })
+                                            .then(literal("on").executes(ctx -> {
+                                                ModState.CATFACT_GUILD.set(true);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (Guild) ON").formatted(Formatting.GREEN)));
+                                                return 1;
+                                            }))
+                                            .then(literal("off").executes(ctx -> {
+                                                ModState.CATFACT_GUILD.set(false);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (Guild) OFF").formatted(Formatting.RED)));
+                                                return 1;
+                                            }))
+                                    )
+                                    .then(literal("pm")
+                                            .executes(ctx -> {
+                                                boolean newValue = !ModState.CATFACT_PM.get();
+                                                ModState.CATFACT_PM.set(newValue);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                        .append(Text.literal("Cat Fact (PM) " + (newValue ? "ON" : "OFF"))
+                                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                return newValue ? 1 : 0;
+                                            })
+                                            .then(literal("on").executes(ctx -> {
+                                                ModState.CATFACT_PM.set(true);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (PM) ON").formatted(Formatting.GREEN)));
+                                                return 1;
+                                            }))
+                                            .then(literal("off").executes(ctx -> {
+                                                ModState.CATFACT_PM.set(false);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (PM) OFF").formatted(Formatting.RED)));
+                                                return 1;
+                                            }))
+                                    )
+                                    .then(literal("OnlyOwn")
+                                            .executes(ctx -> {
+                                                boolean newValue = !ModState.CATFACT_SELF_ONLY.get();
+                                                ModState.CATFACT_SELF_ONLY.set(newValue);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                        .append(Text.literal("Cat Fact (OnlyOwn) " + (newValue ? "ON" : "OFF"))
+                                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                return newValue ? 1 : 0;
+                                            })
+                                            .then(literal("on").executes(ctx -> {
+                                                ModState.CATFACT_SELF_ONLY.set(true);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (OnlyOwn) ON").formatted(Formatting.GREEN)));
+                                                return 1;
+                                            }))
+                                            .then(literal("off").executes(ctx -> {
+                                                ModState.CATFACT_SELF_ONLY.set(false);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Cat Fact (OnlyOwn) OFF").formatted(Formatting.RED)));
+                                                return 1;
+                                            }))
+                                    )
+                            )
                             .then(literal("sound")
                                     // `/automeow sound` -> TOGGLE
                                     .executes(ctx -> {

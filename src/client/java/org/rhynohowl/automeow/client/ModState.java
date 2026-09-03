@@ -21,6 +21,10 @@ public final class ModState {
     public static final java.util.concurrent.atomic.AtomicBoolean APPEND_FACE = new java.util.concurrent.atomic.AtomicBoolean(true);
     public static final AtomicLong echoUntil = new AtomicLong(0);     // hard anti-echo
     public static final AtomicLong cooldownUntil = new AtomicLong(0); // OR-gate timer
+    public static final AtomicBoolean CATFACT_PARTY = new AtomicBoolean(true);
+    public static final AtomicBoolean CATFACT_GUILD = new AtomicBoolean(true);
+    public static final AtomicBoolean CATFACT_PM = new AtomicBoolean(true);
+    public static final AtomicBoolean CATFACT_SELF_ONLY = new AtomicBoolean(true);
 
     public static final java.util.EnumMap<HpChannel, AtomicInteger> msgsSinceReply =
             new java.util.EnumMap<>(HpChannel.class);

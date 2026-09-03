@@ -172,12 +172,31 @@ public class AutomeowClient implements ClientModInitializer {
             ch = HpChannel.ALL;
         } else {
             ch = HpChannel.detect(clean);
+
+            if (ch != HpChannel.PM && (clean.startsWith("To ") || clean.startsWith("From "))) {
+                if (CatFact.PM_TARGET_PATTERN.matcher(clean).find()) {
+                    ch = HpChannel.PM;
+                }
+            }
         }
 
         if (ch == HpChannel.IGNORE) return;
 
         if (!ModState.isChannelEnabled(ch)) {
             ChatUtil.debug("blocked: channel disabled chan=" + ch);
+            return;
+        }
+
+        UUID meUUID = mc.getSession().getUuidOrNull();
+        String myName = mc.player.getGameProfile().name();
+
+        boolean isMe =
+                (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
+                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find()) ||
+                        (myName != null && clean.startsWith("<" + myName + ">"));
+
+        if (CatFact.shouldHandle(ch, clean, isMe)) {
+            CatFact.handle(mc, ch, clean, sender, lastWhisperFrom);
             return;
         }
 
@@ -203,18 +222,10 @@ public class AutomeowClient implements ClientModInitializer {
 
         long now = System.currentTimeMillis();
 
-        UUID meUUID = mc.getSession().getUuidOrNull();
-        String myName = mc.player.getGameProfile().name();
-
         if (now < ModState.echoUntil.get()) {
             ChatUtil.debug("blocked: echo quiet (" + (ModState.echoUntil.get() - now) + "ms left) chan =" + ch);
             return;
         }
-
-        boolean isMe =
-                (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
-                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find()) ||
-                        (myName != null && clean.startsWith("<" + myName + ">"));
 
         if (isMe) {
             if (ModState.skipNextOwnIncrement.getAndSet(false)) {

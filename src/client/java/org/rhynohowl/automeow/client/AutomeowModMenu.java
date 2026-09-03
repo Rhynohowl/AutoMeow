@@ -140,6 +140,38 @@ public class AutomeowModMenu implements ModMenuApi {
                             .build()
             );
 
+            // Cat facts (I mean like cmon it says it right there like 8 times)
+            SubCategoryBuilder catFactsCategory = eb.startSubCategory(Text.literal("Cat Facts")).setExpanded(false);
+            catFactsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Party Chat !catfact"), ModState.CATFACT_PARTY.get())
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.CATFACT_PARTY.set(val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Automatically reply with a cat fact when !catfact is sent in party chat."))
+                            .build()
+            );
+            catFactsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Guild Chat !catfact"), ModState.CATFACT_GUILD.get())
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.CATFACT_GUILD.set(val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Automatically reply with a cat fact when !catfact is sent in guild chat."))
+                            .build()
+            );
+            catFactsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Private Message !catfact "), ModState.CATFACT_PM.get())
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.CATFACT_PM.set(val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Automatically reply with a cat fact when !catfact is sent in private messages."))
+                            .build()
+            );
+            catFactsCategory.add(
+                    eb.startBooleanToggle(Text.literal("Only own messages "), ModState.CATFACT_SELF_ONLY.get())
+                            .setDefaultValue(true)
+                            .setSaveConsumer(val -> { ModState.CATFACT_SELF_ONLY.set(val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Only send catfacts to your own !catfact message."))
+                            .build()
+            );
+            general.addEntry(catFactsCategory.build());
+
             // Channels enable/disable per chat channel
             SubCategoryBuilder channelsCategory = eb.startSubCategory(Text.literal("Channels")).setExpanded(false);
             channelsCategory.add(
