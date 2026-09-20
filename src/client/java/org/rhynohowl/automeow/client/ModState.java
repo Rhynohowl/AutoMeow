@@ -81,6 +81,18 @@ public final class ModState {
             "awruf"
     );
 
+    // Hypixel rejects a message identical to your last one ("You cannot say the same
+    // message twice!"), so rotation cycles the reply instead of repeating it.
+    public static final java.util.List<String> DEFAULT_REPLY_ROTATION =
+            java.util.List.of("meow", "mrrp", "mrow", "mrraow", "mew");
+
+    public static final AtomicBoolean ROTATE_REPLIES = new AtomicBoolean(false);
+
+    private static final java.util.List<String> REPLY_ROTATION =
+            new java.util.concurrent.CopyOnWriteArrayList<>(DEFAULT_REPLY_ROTATION);
+
+    private static final AtomicInteger ROTATION_INDEX = new AtomicInteger(0);
+
     public static void incrementReplyCount() {
         ModConfig.CONFIG.totalReplies++;
         ModConfig.save();
@@ -105,5 +117,52 @@ public final class ModState {
             if (option.equalsIgnoreCase(trimed)) return option;
         }
         return null;
+    }
+
+    public static java.util.List<String> getReplyRotation() {
+        return java.util.List.copyOf(REPLY_ROTATION);
+    }
+
+    // drops anything that isn't a preset, and any repeats. returns how many entries survived
+    public static int setReplyRotation(java.util.List<String> requested) {
+        java.util.LinkedHashSet<String> kept = new java.util.LinkedHashSet<>();
+        if (requested != null) {
+            for (String entry : requested) {
+                String canon = canonicalPresetOrNull(entry);
+                if (canon != null) kept.add(canon);
+            }
+        }
+        REPLY_ROTATION.clear();
+        REPLY_ROTATION.addAll(kept);
+        ROTATION_INDEX.set(0);
+        return REPLY_ROTATION.size();
+    }
+
+    public static boolean addRotationEntry(String requestedText) {
+        String canon = canonicalPresetOrNull(requestedText);
+        if (canon == null || REPLY_ROTATION.contains(canon)) return false;
+        REPLY_ROTATION.add(canon);
+        return true;
+    }
+
+    public static boolean removeRotationEntry(String requestedText) {
+        String canon = canonicalPresetOrNull(requestedText);
+        if (canon == null) return false;
+        boolean removed = REPLY_ROTATION.remove(canon);
+        if (removed) ROTATION_INDEX.set(0);
+        return removed;
+    }
+
+    public static void clearReplyRotation() {
+        REPLY_ROTATION.clear();
+        ROTATION_INDEX.set(0);
+    }
+
+    // text for the next auto-reply: steps the rotation along, or REPLY_TEXT when rotation is off
+    public static String nextReplyText() {
+        if (!ROTATE_REPLIES.get()) return REPLY_TEXT;
+        java.util.List<String> rotation = java.util.List.copyOf(REPLY_ROTATION);
+        if (rotation.isEmpty()) return REPLY_TEXT;
+        return rotation.get(Math.floorMod(ROTATION_INDEX.getAndIncrement(), rotation.size()));
     }
 }

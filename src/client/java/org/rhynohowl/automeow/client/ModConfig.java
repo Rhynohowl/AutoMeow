@@ -18,6 +18,8 @@ public final class ModConfig {
         boolean enabled = true;
         boolean chroma = false;
         String replyText = "meow";
+        boolean rotateReplies = false;
+        java.util.List<String> replyRotation = new java.util.ArrayList<>(ModState.DEFAULT_REPLY_ROTATION);
         boolean appendFace = false;
         boolean playSound = true;
         boolean heartsEffect = true;
@@ -75,6 +77,12 @@ public final class ModConfig {
                 ModState.REPLY_TEXT = ModState.DEFAULT_REPLY_TEXT;
             }
 
+            // rotation: an older config has no list at all, so fall back to the default one
+            ModState.ROTATE_REPLIES.set(CONFIG.rotateReplies);
+            ModState.setReplyRotation(CONFIG.replyRotation != null
+                    ? CONFIG.replyRotation
+                    : ModState.DEFAULT_REPLY_ROTATION);
+
         } catch (Exception ignored) {
         }
     }
@@ -89,6 +97,8 @@ public final class ModConfig {
             CONFIG.enabled = ModState.ENABLED.get();
             CONFIG.chroma = ModState.CHROMA_WANTED.get();
             CONFIG.replyText = ModState.REPLY_TEXT;
+            CONFIG.rotateReplies = ModState.ROTATE_REPLIES.get();
+            CONFIG.replyRotation = ModState.getReplyRotation();
             CONFIG.appendFace = ModState.APPEND_FACE.get();
             CONFIG.playSound = ModState.PLAY_SOUND.get();
             CONFIG.heartsEffect = ModState.HEARTS_EFFECT.get();

@@ -14,6 +14,7 @@ Works on vanilla servers and Hypixel (no server mod needed).
 - **Toggleable** at runtime with a pretty badge.
 - **Persistent settings** saved to `config/automeow.json`.
 - Optional **chroma badge** integration with **Skyhanni**’s chroma (off by default).
+- Optional **reply rotation** – cycle through several presets so servers that reject a repeated message (“You cannot say the same message twice!”) keep letting the replies through (off by default).
 
 ---
 
@@ -32,6 +33,10 @@ Works on vanilla servers and Hypixel (no server mod needed).
 | `/automeow channels` | Enable/disable specific hypixel channels                        |
 | `/automeow stats`    | View total meows sent                                           |
 | `/automeow say`      | Select reply preset                                             |
+| `/automeow rotation` | Show the reply rotation and whether it is on                    |
+| `/automeow rotation toggle` | Cycle through the rotation instead of one fixed reply    |
+| `/automeow rotation add/remove <preset>` | Edit the rotation                          |
+| `/automeow rotation clear` | Empty the rotation (falls back to the single reply)      |
 
 > The very first “meow” after joining or changing lobby is answered instantly;  
 > after that, AutoMeow waits until **you** have chatted **3** more times.

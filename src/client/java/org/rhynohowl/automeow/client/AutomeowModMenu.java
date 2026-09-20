@@ -122,6 +122,25 @@ public class AutomeowModMenu implements ModMenuApi {
                             .build()
             );
 
+            general.addEntry(
+                    eb.startBooleanToggle(Text.literal("Rotate replies"), ModState.ROTATE_REPLIES.get())
+                            .setDefaultValue(false)
+                            .setSaveConsumer(val -> { ModState.ROTATE_REPLIES.set(val); ModConfig.save(); })
+                            .setTooltip(Text.literal("Cycle through the rotation list below instead of always sending the same reply.\n"
+                                    + "Stops servers rejecting the reply for being identical to your last message."))
+                            .build()
+            );
+
+            general.addEntry(
+                    eb.startStrList(Text.literal("Reply rotation"), new java.util.ArrayList<>(ModState.getReplyRotation()))
+                            .setDefaultValue(new java.util.ArrayList<>(ModState.DEFAULT_REPLY_ROTATION))
+                            .setSaveConsumer(list -> { ModState.setReplyRotation(list); ModConfig.save(); })
+                            .setTooltip(Text.literal("Replies are sent in this order, then it starts again from the top.\n"
+                                            + "Only presets are kept; anything else is dropped when you save.\n")
+                                    .append(Text.literal(String.join(", ", ModState.REPLY_PRESETS)).formatted(Formatting.GRAY)))
+                            .build()
+            );
+
             // Play meow sound
             general.addEntry(
                     eb.startBooleanToggle(Text.literal("Play meow sound"), ModState.PLAY_SOUND.get())

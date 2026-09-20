@@ -292,7 +292,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (mc.player != null && mc.player.networkHandler != null) {
             ModState.skipNextOwnIncrement.set(true);
 
-            String out = ModState.REPLY_TEXT + (ModState.APPEND_FACE.get() ? " :3" : "");
+            String out = ModState.nextReplyText() + (ModState.APPEND_FACE.get() ? " :3" : "");
 
             if (!ModState.ON_HYPIXEL.get() && ch == HpChannel.PM) {
                 String target = lastWhisperFrom;

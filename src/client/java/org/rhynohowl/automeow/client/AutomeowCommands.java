@@ -319,7 +319,99 @@ public final class AutomeowCommands {
                                             })
                                     )
                             )
+                            .then(literal("rotation")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(rotationStatus());
+                                        return ModState.ROTATE_REPLIES.get() ? 1 : 0;
+                                    })
+                                    .then(literal("toggle").executes(ctx -> {
+                                        boolean newValue = !ModState.ROTATE_REPLIES.get();
+                                        ModState.ROTATE_REPLIES.set(newValue);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(
+                                                ChatUtil.badge().append(Text.literal("Reply rotation " + (newValue ? "ON" : "OFF"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED))
+                                        );
+                                        return newValue ? 1 : 0;
+                                    }))
+                                    .then(literal("add")
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+                                                    .argument("preset", StringArgumentType.greedyString())
+                                                    .suggests((ctx, suggestion) -> {
+                                                        java.util.List<String> rotation = ModState.getReplyRotation();
+                                                        for (String opt : ModState.REPLY_PRESETS) {
+                                                            if (!rotation.contains(opt)) suggestion.suggest(opt);
+                                                        }
+                                                        return suggestion.buildFuture();
+                                                    })
+                                                    .executes(ctx -> {
+                                                        String wanted = StringArgumentType.getString(ctx, "preset").trim();
+
+                                                        if (!ModState.addRotationEntry(wanted)) {
+                                                            boolean alreadyIn = ModState.getReplyRotation().stream()
+                                                                    .anyMatch(entry -> entry.equalsIgnoreCase(wanted));
+                                                            ctx.getSource().sendFeedback(
+                                                                    ChatUtil.badge().append(Text.literal(alreadyIn
+                                                                                    ? "\"" + wanted + "\" is already in the rotation"
+                                                                                    : "Invalid preset. Choose one of: " + String.join(", ", ModState.REPLY_PRESETS))
+                                                                            .formatted(Formatting.RED))
+                                                            );
+                                                            return 0;
+                                                        }
+
+                                                        ModConfig.save();
+                                                        ctx.getSource().sendFeedback(rotationStatus());
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                                    .then(literal("remove")
+                                            .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+                                                    .argument("preset", StringArgumentType.greedyString())
+                                                    .suggests((ctx, suggestion) -> {
+                                                        for (String opt : ModState.getReplyRotation()) suggestion.suggest(opt);
+                                                        return suggestion.buildFuture();
+                                                    })
+                                                    .executes(ctx -> {
+                                                        String wanted = StringArgumentType.getString(ctx, "preset");
+
+                                                        if (!ModState.removeRotationEntry(wanted)) {
+                                                            ctx.getSource().sendFeedback(
+                                                                    ChatUtil.badge().append(Text.literal("\"" + wanted.trim() + "\" is not in the rotation")
+                                                                            .formatted(Formatting.RED))
+                                                            );
+                                                            return 0;
+                                                        }
+
+                                                        ModConfig.save();
+                                                        ctx.getSource().sendFeedback(rotationStatus());
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                                    .then(literal("clear").executes(ctx -> {
+                                        ModState.clearReplyRotation();
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(rotationStatus());
+                                        return 1;
+                                    }))
+                            )
             );
         });
+    }
+
+    // "[AutoMeow] Rotation ON | meow -> mrrp -> mrow"
+    private static Text rotationStatus() {
+        boolean on = ModState.ROTATE_REPLIES.get();
+        java.util.List<String> rotation = ModState.getReplyRotation();
+
+        return ChatUtil.badge()
+                .append(Text.literal("Rotation " + (on ? "ON" : "OFF"))
+                        .formatted(on ? Formatting.GREEN : Formatting.RED))
+                .append(Text.literal(" | ").formatted(Formatting.DARK_GRAY))
+                .append(Text.literal(rotation.isEmpty()
+                                ? "empty, replying \"" + ModState.REPLY_TEXT + "\""
+                                : String.join(" -> ", rotation))
+                        .formatted(Formatting.AQUA));
     }
 }
