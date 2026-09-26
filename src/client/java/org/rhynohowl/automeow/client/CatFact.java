@@ -15,7 +15,7 @@ public final class CatFact {
     private static final HttpClient catFactHttpClient = HttpClient.newHttpClient();
 
     // yes, seriously. the API says this shit ... evil evil evil >:C
-    private static final java.util.List<String> BANNED_WORDS = java.util.List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie");
+    private static final java.util.List<String> BANNED_WORDS = java.util.List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer");
 
     public static final Pattern PM_TARGET_PATTERN = Pattern.compile("(?i)(?:To|From)\\s+(?:\\[[^\\]]+\\]\\s*)*([A-Za-z0-9_]{3,16})\\s*:");
 
