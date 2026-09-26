@@ -40,7 +40,7 @@ jobs:
         with:
           timeout_minutes: 3
           max_attempts: 3
-          command: ./gradlew :1.21.10:build :26.1:build :26.2:build
+          command: ./gradlew :1.21.10:build :26.1:build :26.2:build :26.3:build
 
       - name: Upload 1.21.10 artifact
         uses: actions/upload-artifact@v7.0.0
@@ -58,4 +58,10 @@ jobs:
         uses: actions/upload-artifact@v7.0.0
         with:
           path: versions/26.2/build/libs/*-26.2.jar
+          archive: false
+
+      - name: Upload 26.3 artifact
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          path: versions/26.3/build/libs/*-26.3.jar
           archive: false
