@@ -10,11 +10,14 @@ import net.minecraft.text.Text;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.util.Formatting;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public final class UpdateChecker {
     // Modrinth
@@ -62,13 +65,13 @@ public final class UpdateChecker {
         //? if <26.1 {
         final String currentMcVer = MinecraftClient.getInstance().getGameVersion();
         //?} else if <26.2 {
-        /*final String currentMcVer = MinecraftClient.getInstance().getVersionType();*/
-        //?} else {
+        /*final String currentMcVer = MinecraftClient.getInstance().getVersionType();
+        *///?} else {
         /*final String currentMcVer = MinecraftClient.getInstance().getLaunchedVersion();*/
         //?}
 
         HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
+                .connectTimeout(Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
                 .build();
 
         // "All versions" endpoint, we'll pick the newest stable one.
@@ -76,7 +79,7 @@ public final class UpdateChecker {
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
                 .header("User-Agent", "rhynohowl/automeow/" + currentModVer + " (MC " + currentMcVer + ")")
-                .timeout(java.time.Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
+                .timeout(Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
                 .build();
 
         httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -88,7 +91,7 @@ public final class UpdateChecker {
                         JsonArray versionsArray = JsonParser.parseString(body).getAsJsonArray();
                         String bestVer = null;
                         String bestUrl = null;
-                        java.time.Instant bestDate = java.time.Instant.EPOCH;
+                        Instant bestDate = Instant.EPOCH;
 
                         for (int versionIndex = 0; versionIndex < versionsArray.size(); versionIndex++) {
                             JsonObject versionObject = versionsArray.get(versionIndex).getAsJsonObject();
@@ -99,7 +102,7 @@ public final class UpdateChecker {
                             if (!arrContainsString(versionObject, "game_versions", currentMcVer)) continue;
 
                             String versionNumber = versionObject.get("version_number").getAsString();
-                            java.time.Instant publishedDate = java.time.Instant.parse(versionObject.get("date_published").getAsString());
+                            Instant publishedDate = Instant.parse(versionObject.get("date_published").getAsString());
 
                             if (bestVer == null || publishedDate.isAfter(bestDate)) {
                                 bestVer = versionNumber;
@@ -133,13 +136,13 @@ public final class UpdateChecker {
                                     //? if <26.1 {
                                     mc.inGameHud.getChatHud().addMessage(msg); // local only
                                     //?} else if <26.2 {
-                                    /*mc.getChatListener().handleSystemMessage(msg, false); // local only*/
-                                    //?} else {
+                                    /*mc.getChatListener().handleSystemMessage(msg, false); // local only
+                                    *///?} else {
                                     /*mc.gui.chatListener().handleSystemMessage(msg, false); // local only*/
                                     //?}
                                 });
-                                java.util.concurrent.CompletableFuture
-                                        .delayedExecutor(15, java.util.concurrent.TimeUnit.SECONDS)
+                                CompletableFuture
+                                        .delayedExecutor(15, TimeUnit.SECONDS)
                                         .execute(showUpdate);
                             }
                         }

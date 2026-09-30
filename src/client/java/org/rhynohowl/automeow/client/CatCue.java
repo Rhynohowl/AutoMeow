@@ -6,6 +6,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import java.util.Locale;
 
 public final class CatCue {
     // Plays a cat meow and spawns heart particles around the given player (client-side only).
@@ -50,7 +51,7 @@ public final class CatCue {
         }
         if (raw == null || raw.isEmpty()) return null;
 
-        String cleanedLine = raw.replaceAll("§.", "").toLowerCase(java.util.Locale.ROOT);
+        String cleanedLine = raw.replaceAll("§.", "").toLowerCase(Locale.ROOT);
         PlayerEntity bestMatch = null;
         double bestDistance = Double.MAX_VALUE;
 
@@ -58,7 +59,7 @@ public final class CatCue {
             String playerName = player.getGameProfile().name();
             if (playerName == null) continue;
 
-            if (cleanedLine.contains(playerName.toLowerCase(java.util.Locale.ROOT))) {
+            if (cleanedLine.contains(playerName.toLowerCase(Locale.ROOT))) {
                 double distance = (mc.player != null) ? player.squaredDistanceTo(mc.player) : 0.0;
                 if (bestMatch == null || distance < bestDistance) {
                     bestMatch = player;

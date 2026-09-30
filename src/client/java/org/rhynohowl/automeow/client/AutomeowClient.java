@@ -10,8 +10,11 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AutomeowClient implements ClientModInitializer {
@@ -50,7 +53,7 @@ public class AutomeowClient implements ClientModInitializer {
             if (cmd == null) return;
 
             String rawCmd = cmd.startsWith("/") ? cmd.substring(1) : cmd;
-            String head = rawCmd.split("\\s+", 2)[0].toLowerCase(java.util.Locale.ROOT);
+            String head = rawCmd.split("\\s+", 2)[0].toLowerCase(Locale.ROOT);
 
             HpChannel ch = switch (head) {
                 case "pc" -> HpChannel.PARTY;
@@ -80,8 +83,8 @@ public class AutomeowClient implements ClientModInitializer {
         // React to incoming chat
         ClientReceiveMessageEvents.CHAT.register(
                 (message, signedMessage, sender, params, ts) -> {
-                    Text decorated = params.applyChatDecoration(message);
-                    MinecraftClient.getInstance().execute(() -> handleIncoming(decorated, sender, false));
+                    Text applyChatDecorationd = params.applyChatDecoration(message);
+                    MinecraftClient.getInstance().execute(() -> handleIncoming(applyChatDecorationd, sender, false));
                 }
         );
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
@@ -107,7 +110,7 @@ public class AutomeowClient implements ClientModInitializer {
         var servercheck = mc.getCurrentServerEntry();
         boolean hypixel = servercheck != null
                 && servercheck.address != null
-                && servercheck.address.toLowerCase(java.util.Locale.ROOT).contains("hypixel.net");
+                && servercheck.address.toLowerCase(Locale.ROOT).contains("hypixel.net");
         ModState.ON_HYPIXEL.set(hypixel);
     }
 
@@ -130,7 +133,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (isSystemMessage) {
             if (!ModState.ON_HYPIXEL.get()) {
                 boolean isWhisper = HpChannel.vanillaWhisperPattern().matcher(clean).find()
-                        || clean.toLowerCase(java.util.Locale.ROOT).startsWith("from");
+                        || clean.toLowerCase(Locale.ROOT).startsWith("from");
                 boolean isLooseChat = HpChannel.ALL_CHAT_LOOSE.matcher(clean).find();
 
                 if (!isWhisper && !isLooseChat) {
@@ -151,7 +154,7 @@ public class AutomeowClient implements ClientModInitializer {
             String myNameEarly = mc.player != null ? mc.player.getGameProfile().name() : null;
             if (myNameEarly != null) {
                 String rawStripped = raw.replaceAll("§.", "").trim();
-                if (rawStripped.toLowerCase(java.util.Locale.ROOT).startsWith("from")
+                if (rawStripped.toLowerCase(Locale.ROOT).startsWith("from")
                         && rawStripped.contains(myNameEarly + ":")) {
                     return;
                 }
@@ -205,7 +208,7 @@ public class AutomeowClient implements ClientModInitializer {
             int end = clean.indexOf('>');
             meowTarget = end >= 0 ? clean.substring(end + 1).trim() : clean;
         } else {
-            java.util.regex.Matcher prefixMatcher = SENDER_PREFIX.matcher(clean);
+            Matcher prefixMatcher = SENDER_PREFIX.matcher(clean);
             meowTarget = prefixMatcher.find() ? clean.substring(prefixMatcher.end()).trim() : clean;
         }
 
@@ -280,7 +283,7 @@ public class AutomeowClient implements ClientModInitializer {
             if (!HpChannel.vanillaWhisperPattern().matcher(clean).find()) {
                 String header = clean.split(":", 2)[0];
 
-                java.util.regex.Matcher usernameFinder = java.util.regex.Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b").matcher(header);
+                Matcher usernameFinder = Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b").matcher(header);
                 String found = null;
                 while (usernameFinder.find()) found = usernameFinder.group(1);
                 if (found != null) lastWhisperFrom = found;
@@ -331,7 +334,7 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.startTimer();
                 ModState.manualSendPending.set(false);
                 final HpChannel finalCh = ch;
-                java.util.concurrent.CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS)
+                CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS)
                         .execute(() -> mc.execute(() -> {
                             if (ModState.manualSendPending.get()) {
                                 ModState.manualSendPending.set(false);

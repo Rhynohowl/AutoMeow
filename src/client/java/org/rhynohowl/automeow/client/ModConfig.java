@@ -3,10 +3,11 @@ package org.rhynohowl.automeow.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.client.MinecraftClient;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class ModConfig {
     // Config state
@@ -17,6 +18,12 @@ public final class ModConfig {
     public static class Data {
         boolean enabled = true;
         boolean chroma = false;
+        boolean gradient = false;
+        String gradientPreset = ModState.CUSTOM_GRADIENT_PRESET;
+        List<String> gradientColours = new ArrayList<>(ModState.DEFAULT_GRADIENT_COLOURS);
+        String gradientDirection = ModState.DEFAULT_GRADIENT_DIRECTION;
+        float gradientSpeed = ModState.DEFAULT_GRADIENT_SPEED;
+        boolean gradientLoop = true;
         String replyText = "meow";
         boolean appendFace = false;
         boolean playSound = true;
@@ -56,6 +63,13 @@ public final class ModConfig {
 
             ModState.ENABLED.set(CONFIG.enabled);
             ModState.CHROMA_WANTED.set(CONFIG.chroma);
+            ModState.GRADIENT_WANTED.set(CONFIG.gradient);
+            ModState.setBadgeStyle(ModState.badgeStyle());
+            ModState.setGradientPreset(CONFIG.gradientPreset);
+            ModState.setGradientColours(CONFIG.gradientColours);
+            ModState.setGradientDirection(CONFIG.gradientDirection);
+            ModState.setGradientSpeed(CONFIG.gradientSpeed);
+            ModState.GRADIENT_LOOP.set(CONFIG.gradientLoop);
             ModState.APPEND_FACE.set(CONFIG.appendFace);
             ModState.PLAY_SOUND.set(CONFIG.playSound);
             ModState.HEARTS_EFFECT.set(CONFIG.heartsEffect);
@@ -88,6 +102,12 @@ public final class ModConfig {
             }
             CONFIG.enabled = ModState.ENABLED.get();
             CONFIG.chroma = ModState.CHROMA_WANTED.get();
+            CONFIG.gradient = ModState.GRADIENT_WANTED.get();
+            CONFIG.gradientPreset = ModState.GRADIENT_PRESET;
+            CONFIG.gradientColours = new ArrayList<>(ModState.GRADIENT_COLOURS);
+            CONFIG.gradientDirection = ModState.GRADIENT_DIRECTION;
+            CONFIG.gradientSpeed = ModState.GRADIENT_SPEED;
+            CONFIG.gradientLoop = ModState.GRADIENT_LOOP.get();
             CONFIG.replyText = ModState.REPLY_TEXT;
             CONFIG.appendFace = ModState.APPEND_FACE.get();
             CONFIG.playSound = ModState.PLAY_SOUND.get();

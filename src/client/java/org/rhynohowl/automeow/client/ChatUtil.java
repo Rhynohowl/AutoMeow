@@ -5,6 +5,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
+import java.util.Locale;
 
 public final class ChatUtil {
     private static final int PASTEL_PINK = 0xFFC0CB; // soft pastel pink (#ffc0cb)
@@ -16,6 +17,18 @@ public final class ChatUtil {
                 .replace('\u00A0', ' ')
                 .replaceAll("[\\u200B-\\u200F\\uFEFF\\u2060]", "")
                 .trim();
+    }
+
+    public static Integer parseHexColour(String input) {
+        if (input == null) return null;
+        String hex = input.trim();
+        if (hex.startsWith("#")) {
+            hex = hex.substring(1);
+        } else if (hex.toLowerCase(Locale.ROOT).startsWith("0x")) {
+            hex = hex.substring(2);
+        }
+        if (!hex.matches("[0-9a-fA-F]{6}")) return null;
+        return Integer.parseInt(hex, 16);
     }
 
     public static void debug(String msg) {
@@ -32,8 +45,8 @@ public final class ChatUtil {
             //?} else if <26.2 {
             /*mc.getChatListener().handleSystemMessage(
                     badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY)), false
-            );*/
-            //?} else {
+            );
+            *///?} else {
             /*mc.gui.chatListener().handleSystemMessage(
                     badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY)), false
             );*/
@@ -43,11 +56,15 @@ public final class ChatUtil {
 
     // [AutoMeow] Prefix
     public static MutableText badge() {
-        boolean chroma = ModState.CHROMA_WANTED.get() && ChromaHelper.hasSkyhanni();
+        boolean gradient = ModState.GRADIENT_WANTED.get() && MeowddingHelper.hasMeowdding();
+        boolean chroma = !gradient && ModState.CHROMA_WANTED.get() && ChromaHelper.hasSkyhanni();
 
         MutableText name = Text.literal("AutoMeow")
                 .styled(s -> s.withBold(false)
                         .withColor(chroma ? ChromaHelper.getChromaTextColor() : TextColor.fromRgb(PASTEL_PINK)));
+        if (gradient) {
+            name = name.styled(s -> MeowddingHelper.applyGradient(s));
+        }
 
         return Text.literal("[").formatted(Formatting.GRAY)
                 .append(name)

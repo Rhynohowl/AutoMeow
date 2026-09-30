@@ -7,7 +7,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import com.mojang.authlib.GameProfile;
 
@@ -15,7 +21,7 @@ public final class CatFact {
     private static final HttpClient catFactHttpClient = HttpClient.newHttpClient();
 
     // yes, seriously. the API says this shit ... evil evil evil >:C
-    private static final java.util.List<String> BANNED_WORDS = java.util.List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer");
+    private static final List<String> BANNED_WORDS = List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer", "Main Coon");
 
     public static final Pattern PM_TARGET_PATTERN = Pattern.compile("(?i)(?:To|From)\\s+(?:\\[[^\\]]+\\]\\s*)*([A-Za-z0-9_]{3,16})\\s*:");
 
@@ -39,7 +45,7 @@ public final class CatFact {
         };
 
         fetchCatFact(fact -> {
-            java.util.concurrent.CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS)
+            CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS)
                     .execute(() -> mc.execute(() -> {
                         if (mc.player != null && mc.player.networkHandler != null) {
                             mc.player.networkHandler.sendChatCommand(commandPrefix + fact);
@@ -58,24 +64,24 @@ public final class CatFact {
 
     private static String parsePmTarget(String clean, String fallbackName) {
         if (clean == null) return fallbackName;
-        java.util.regex.Matcher matcher = PM_TARGET_PATTERN.matcher(clean);
+        Matcher matcher = PM_TARGET_PATTERN.matcher(clean);
         if (matcher.find()) {
             return matcher.group(1);
         }
         return fallbackName;
     }
 
-    private static void fetchCatFact(java.util.function.Consumer<String> onFactRetrieved) {
+    private static void fetchCatFact(Consumer<String> onFactRetrieved) {
         retryFetchCatFact(onFactRetrieved, 0);
     }
 
-    private static void retryFetchCatFact(java.util.function.Consumer<String> onFactRetrieved, int currentRetryCount) {
+    private static void retryFetchCatFact(Consumer<String> onFactRetrieved, int currentRetryCount) {
         if (currentRetryCount >= 5) {
             return;
         }
 
         HttpRequest apiRequest = HttpRequest.newBuilder(URI.create("https://catfact.ninja/fact?max_length=200"))
-                .timeout(java.time.Duration.ofSeconds(5))
+                .timeout(Duration.ofSeconds(5))
                 .build();
         catFactHttpClient.sendAsync(apiRequest, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(apiHttpResponse -> {
@@ -83,7 +89,7 @@ public final class CatFact {
                         JsonObject parsedJsonResponse = JsonParser.parseString(apiHttpResponse.body()).getAsJsonObject();
                         String factText = parsedJsonResponse.get("fact").getAsString();
 
-                        String lowerFactText = factText.toLowerCase(java.util.Locale.ROOT);
+                        String lowerFactText = factText.toLowerCase(Locale.ROOT);
                         boolean hasBannedWord = BANNED_WORDS.stream().anyMatch(lowerFactText::contains);
 
                         if (hasBannedWord) {

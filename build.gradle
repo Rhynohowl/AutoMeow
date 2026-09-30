@@ -45,11 +45,11 @@ fabricApi {
 
 repositories {
     maven { url = "https://maven.gnomecraft.net/releases" } // Mod Menu
-    maven { url = "https://maven.shedaniel.me/" }                // Cloth Config
+    maven { url = "https://maven.shedaniel.me/" } // Cloth Config
+    maven { url = "https://maven.teamresourceful.com/repository/maven-public/" } // Meowdding :3
 }
 
 dependencies {
-    // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.property('minecraft_version')}"
 
     if (minecraft_version.startsWith("1.")) {
@@ -62,6 +62,13 @@ dependencies {
         implementation "net.fabricmc.fabric-api:fabric-api:${project.property('deps.fabric_version')}"
         implementation "com.terraformersmc:modmenu:${project.property('deps.modmenu_version')}"
         implementation "me.shedaniel.cloth:cloth-config-fabric:${project.property('deps.cloth_config_version')}"
+        compileOnly("me.owdding.meowdding-lib:meowdding-lib:${project.property('deps.meowdding-lib')}") {
+            transitive = false
+            capabilities {
+                requireCapability("me.owdding.meowdding-lib:meowdding-lib-${project.minecraft_version}")
+            }
+        }
+        compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${project.property('deps.kotlin_stdlib')}"
     }
 }
 
@@ -120,11 +127,10 @@ if (minecraft_version.startsWith("1.")) {
         archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}-sources.jar"
     }
 } else {
- tasks.named('jar') {
-     archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}.jar"
- }
+    tasks.named('jar') {
+        archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}.jar"
+    }
     tasks.named('sourcesJar') {
         archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}-sources.jar"
     }
 }
-

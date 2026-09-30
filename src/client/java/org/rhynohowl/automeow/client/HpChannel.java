@@ -1,5 +1,6 @@
 package org.rhynohowl.automeow.client;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 public enum HpChannel {
@@ -23,8 +24,8 @@ public enum HpChannel {
 
     public static final Pattern ALL_CHAT_LOOSE = Pattern.compile("^.*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:*");
 
-    private static final java.util.regex.Pattern LEADING_WORD =
-            java.util.regex.Pattern.compile("^\\s*([A-Za-z]+(?:[-\\p{Pd}][A-Za-z]+)?)");
+    private static final Pattern LEADING_WORD =
+            Pattern.compile("^\\s*([A-Za-z]+(?:[-\\p{Pd}][A-Za-z]+)?)");
 
     public static Pattern vanillaWhisperPattern() {
         return VANILLA_WHISPER_IN;
@@ -44,7 +45,7 @@ public enum HpChannel {
 
         var leadingWordMatcher = LEADING_WORD.matcher(strippedFormatting);
         if (leadingWordMatcher.find()) {
-            String normalisedWord = leadingWordMatcher.group(1).toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z]", "");
+            String normalisedWord = leadingWordMatcher.group(1).toLowerCase(Locale.ROOT).replaceAll("[^a-z]", "");
             switch (normalisedWord) {
                 case "party":   return PARTY;
                 case "guild":   return GUILD;

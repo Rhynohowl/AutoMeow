@@ -1,10 +1,15 @@
 package org.rhynohowl.automeow.client;
 
+import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Locale;
+
 import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
 
 public final class AutomeowCommands {
@@ -45,13 +50,176 @@ public final class AutomeowCommands {
                                     return 0;
                                 }
                                 boolean newValue = !ModState.CHROMA_WANTED.get();
-                                ModState.CHROMA_WANTED.set(newValue);
+                                ModState.setBadgeStyle(newValue ? ModState.BADGE_CHROMA : ModState.BADGE_DEFAULT);
                                 ModConfig.save();
                                 ctx.getSource().sendFeedback(ChatUtil.badge()
                                         .append(Text.literal("Chroma " + (newValue ? "ON" : "OFF"))
                                                 .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
                                 return newValue ? 1 : 0;
                             }))
+                            .then(literal("gradient")
+                                    .executes(ctx -> {
+                                        if (!MeowddingHelper.hasMeowdding()) {
+                                            ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                    .append(Text.literal(MeowddingHelper.supportedVersion()
+                                                            ? "MeowddingLib not found"
+                                                            : "Gradient not available on this game version").formatted(Formatting.RED)));
+                                            return 0;
+                                        }
+                                        boolean newValue = !ModState.GRADIENT_WANTED.get();
+                                        ModState.setBadgeStyle(newValue ? ModState.BADGE_GRADIENT : ModState.BADGE_DEFAULT);
+                                        ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                .append(Text.literal("Gradient " + (newValue ? "ON" : "OFF"))
+                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        return newValue ? 1 : 0;
+                                    })
+                                    .then(literal("on").executes(ctx -> {
+                                        if (!MeowddingHelper.hasMeowdding()) {
+                                            ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                    .append(Text.literal(MeowddingHelper.supportedVersion()
+                                                            ? "MeowddingLib not found"
+                                                            : "Gradient not available on this game version").formatted(Formatting.RED)));
+                                            return 0;
+                                        }
+                                        ModState.setBadgeStyle(ModState.BADGE_GRADIENT); ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Gradient ON").formatted(Formatting.GREEN)));
+                                        return 1;
+                                    }))
+                                    .then(literal("off").executes(ctx -> {
+                                        ModState.GRADIENT_WANTED.set(false); ModConfig.save();
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Gradient OFF").formatted(Formatting.RED)));
+                                        return 1;
+                                    }))
+                                    .then(literal("preset")
+                                            .then(ClientCommandManager
+                                                    .argument("preset", StringArgumentType.word())
+                                                    .suggests((ctx, suggestion) -> {
+                                                        for (String opt : ModState.gradientPresetOptions()) suggestion.suggest(opt.toLowerCase(Locale.ROOT));
+                                                        return suggestion.buildFuture();
+                                                    })
+                                                    .executes(ctx -> {
+                                                        java.util.List<String> options = ModState.gradientPresetOptions();
+                                                        String matched = ModState.matchOption(StringArgumentType.getString(ctx, "preset"), options);
+
+                                                        if (matched != null) {
+                                                            ModState.setGradientPreset(matched);
+                                                            ModConfig.save();
+                                                            ctx.getSource().sendFeedback(
+                                                                    ChatUtil.badge().append(Text.literal("Gradient preset set to " + matched.replace('_', ' '))
+                                                                            .formatted(Formatting.GREEN))
+                                                            );
+                                                            return 1;
+                                                        }
+
+                                                        ctx.getSource().sendFeedback(
+                                                                ChatUtil.badge().append(Text.literal("Invalid preset. Choose one of: " + String.join(", ", options).toLowerCase(Locale.ROOT))
+                                                                        .formatted(Formatting.RED))
+                                                        );
+                                                        return 0;
+                                                    })
+                                            )
+                                    )
+                                    .then(literal("direction")
+                                            .then(ClientCommandManager
+                                                    .argument("direction", StringArgumentType.word())
+                                                    .suggests((ctx, suggestion) -> {
+                                                        for (String opt : ModState.GRADIENT_DIRECTIONS) suggestion.suggest(opt.toLowerCase(Locale.ROOT));
+                                                        return suggestion.buildFuture();
+                                                    })
+                                                    .executes(ctx -> {
+                                                        String matched = ModState.matchOption(StringArgumentType.getString(ctx, "direction"), ModState.GRADIENT_DIRECTIONS);
+
+                                                        if (matched != null) {
+                                                            ModState.setGradientDirection(matched);
+                                                            ModConfig.save();
+                                                            ctx.getSource().sendFeedback(
+                                                                    ChatUtil.badge().append(Text.literal("Gradient direction set to " + matched.replace('_', ' '))
+                                                                            .formatted(Formatting.GREEN))
+                                                            );
+                                                            return 1;
+                                                        }
+
+                                                        ctx.getSource().sendFeedback(
+                                                                ChatUtil.badge().append(Text.literal("Invalid direction. Choose one of: " + String.join(", ", ModState.GRADIENT_DIRECTIONS).toLowerCase(Locale.ROOT))
+                                                                        .formatted(Formatting.RED))
+                                                        );
+                                                        return 0;
+                                                    })
+                                            )
+                                    )
+                                    .then(literal("speed")
+                                            .then(ClientCommandManager
+                                                    .argument("speed", FloatArgumentType.floatArg(ModState.GRADIENT_SPEED_MIN, ModState.GRADIENT_SPEED_MAX))
+                                                    .executes(ctx -> {
+                                                        ModState.setGradientSpeed(FloatArgumentType.getFloat(ctx, "speed"));
+                                                        ModConfig.save();
+                                                        ctx.getSource().sendFeedback(
+                                                                ChatUtil.badge().append(Text.literal("Gradient speed set to " + ModState.GRADIENT_SPEED)
+                                                                        .formatted(Formatting.GREEN))
+                                                        );
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                                    .then(literal("colours")
+                                            .then(ClientCommandManager
+                                                    .argument("colours", StringArgumentType.greedyString())
+                                                    .executes(ctx -> {
+                                                        java.util.List<String> colours = new ArrayList<>();
+                                                        for (String hex : StringArgumentType.getString(ctx, "colours").split("[\\s,]+")) {
+                                                            if (hex.isEmpty()) continue;
+                                                            if (ChatUtil.parseHexColour(hex) == null) {
+                                                                ctx.getSource().sendFeedback(
+                                                                        ChatUtil.badge().append(Text.literal("\"" + hex + "\" is not a hex colour (e.g. FF66B2 or #FF3399)")
+                                                                                .formatted(Formatting.RED))
+                                                                );
+                                                                return 0;
+                                                            }
+                                                            colours.add(hex);
+                                                        }
+
+                                                        if (colours.size() < 2) {
+                                                            ctx.getSource().sendFeedback(
+                                                                    ChatUtil.badge().append(Text.literal("Needs at least 2 colours")
+                                                                            .formatted(Formatting.RED))
+                                                            );
+                                                            return 0;
+                                                        }
+
+                                                        ModState.setGradientColours(colours);
+                                                        ModState.setGradientPreset(ModState.CUSTOM_GRADIENT_PRESET);
+                                                        ModConfig.save();
+                                                        ctx.getSource().sendFeedback(
+                                                                ChatUtil.badge().append(Text.literal("Gradient colours set to " + String.join(", ", colours) + " (preset: custom)")
+                                                                        .formatted(Formatting.GREEN))
+                                                        );
+                                                        return 1;
+                                                    })
+                                            )
+                                    )
+                                    .then(literal("loop")
+                                            .executes(ctx -> {
+                                                boolean newValue = !ModState.GRADIENT_LOOP.get();
+                                                ModState.GRADIENT_LOOP.set(newValue);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge()
+                                                        .append(Text.literal("Gradient Loop " + (newValue ? "ON" : "OFF"))
+                                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                return newValue ? 1 : 0;
+                                            })
+                                            .then(literal("on").executes(ctx -> {
+                                                ModState.GRADIENT_LOOP.set(true); ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Gradient Loop ON").formatted(Formatting.GREEN)));
+                                                return 1;
+                                            }))
+                                            .then(literal("off").executes(ctx -> {
+                                                ModState.GRADIENT_LOOP.set(false); ModConfig.save();
+                                                ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Gradient Loop OFF").formatted(Formatting.RED)));
+                                                return 1;
+                                            }))
+                                    )
+                            )
                             .then(literal("debug").executes(ctx -> {
                                 boolean newValue = !ModState.DEBUG.get();
                                 ModState.DEBUG.set(newValue);
@@ -292,7 +460,7 @@ public final class AutomeowCommands {
                                 return 1;
                             }))
                             .then(literal("say")
-                                    .then(net.fabricmc.fabric.api.client.command.v2.ClientCommandManager
+                                    .then(ClientCommandManager
                                             .argument("preset", StringArgumentType.greedyString())
                                             .suggests((ctx, suggestion) -> {
                                                 for (String opt : ModState.REPLY_PRESETS) suggestion.suggest(opt);
