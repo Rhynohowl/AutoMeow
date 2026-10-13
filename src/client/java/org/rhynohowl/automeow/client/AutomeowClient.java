@@ -206,7 +206,8 @@ public class AutomeowClient implements ClientModInitializer {
                         (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find()) ||
                         (myName != null && clean.startsWith("<" + myName + ">"));
 
-        if (CatFact.shouldHandle(ch, clean, isMe)) {
+        boolean isOwnPm = ch == HpChannel.PM && clean.startsWith("To ");
+        if (CatFact.shouldHandle(ch, clean, isMe || isOwnPm)) {
             CatFact.handle(mc, ch, clean, sender, lastWhisperFrom);
             return;
         }
