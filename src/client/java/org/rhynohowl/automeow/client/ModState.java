@@ -87,6 +87,7 @@ public final class ModState {
             "mrrp",
             "mrrrp",
             "mrow",
+            "ma mow",
             "mrraow",
             "mew",
             "nya",
