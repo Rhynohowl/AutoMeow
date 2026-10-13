@@ -487,6 +487,99 @@ public final class AutomeowCommands {
                                             })
                                     )
                             )
+                            .then(literal("mode")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(
+                                                ChatUtil.badge().append(Text.literal("Reply mode: " + ModState.replyModeName(ModState.REPLY_MODE))
+                                                        .formatted(Formatting.GRAY))
+                                        );
+                                        return 1;
+                                    })
+                                    .then(ClientCommandManager
+                                            .argument("mode", StringArgumentType.word())
+                                            .suggests((ctx, suggestion) -> {
+                                                for (String opt : ModState.REPLY_MODES) suggestion.suggest(opt.toLowerCase(Locale.ROOT));
+                                                return suggestion.buildFuture();
+                                            })
+                                            .executes(ctx -> {
+                                                String matched = ModState.matchReplyMode(StringArgumentType.getString(ctx, "mode"));
+
+                                                if (matched == null) {
+                                                    ctx.getSource().sendFeedback(
+                                                            ChatUtil.badge().append(Text.literal("Invalid mode. Choose one of: " + String.join(", ", ModState.REPLY_MODES).toLowerCase(Locale.ROOT))
+                                                                    .formatted(Formatting.RED))
+                                                    );
+                                                    return 0;
+                                                }
+
+                                                if (matched.equals(ModState.REPLY_MODE_CUSTOM) && ModState.CUSTOM_REPLIES.size() < ModState.MIN_CUSTOM_REPLIES) {
+                                                    ctx.getSource().sendFeedback(
+                                                            ChatUtil.badge().append(Text.literal("Custom needs at least " + ModState.MIN_CUSTOM_REPLIES + " sounds. Set them with /automeow custom <sounds>")
+                                                                    .formatted(Formatting.RED))
+                                                    );
+                                                    return 0;
+                                                }
+
+                                                ModState.setReplyMode(matched);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(
+                                                        ChatUtil.badge().append(Text.literal("Reply mode set to " + ModState.replyModeName(matched))
+                                                                .formatted(Formatting.GREEN))
+                                                );
+                                                return 1;
+                                            })
+                                    )
+                            )
+                            .then(literal("custom")
+                                    .executes(ctx -> {
+                                        ctx.getSource().sendFeedback(
+                                                ChatUtil.badge().append(Text.literal("Custom sounds: " + String.join(", ", ModState.CUSTOM_REPLIES))
+                                                        .formatted(Formatting.GRAY))
+                                        );
+                                        return 1;
+                                    })
+                                    .then(ClientCommandManager
+                                            .argument("sounds", StringArgumentType.greedyString())
+                                            .suggests((ctx, suggestion) -> {
+                                                String typed = suggestion.getRemaining();
+                                                int lastSpace = Math.max(typed.lastIndexOf(' '), typed.lastIndexOf(','));
+                                                String before = typed.substring(0, lastSpace + 1);
+                                                for (String opt : ModState.REPLY_PRESETS) suggestion.suggest(before + opt);
+                                                return suggestion.buildFuture();
+                                            })
+                                            .executes(ctx -> {
+                                                java.util.LinkedHashSet<String> sounds = new java.util.LinkedHashSet<>();
+                                                for (String sound : StringArgumentType.getString(ctx, "sounds").split("[\\s,]+")) {
+                                                    if (sound.isEmpty()) continue;
+                                                    if (ModState.matchOption(sound, ModState.REPLY_PRESETS) == null) {
+                                                        ctx.getSource().sendFeedback(
+                                                                ChatUtil.badge().append(Text.literal("\"" + sound + "\" is not a reply preset. Choose from: " + String.join(", ", ModState.REPLY_PRESETS))
+                                                                        .formatted(Formatting.RED))
+                                                        );
+                                                        return 0;
+                                                    }
+                                                    sounds.add(ModState.matchOption(sound, ModState.REPLY_PRESETS));
+                                                }
+
+                                                if (sounds.size() < ModState.MIN_CUSTOM_REPLIES) {
+                                                    ctx.getSource().sendFeedback(
+                                                            ChatUtil.badge().append(Text.literal("Needs at least " + ModState.MIN_CUSTOM_REPLIES + " different sounds")
+                                                                    .formatted(Formatting.RED))
+                                                    );
+                                                    return 0;
+                                                }
+
+                                                ModState.setCustomReplies(new ArrayList<>(sounds));
+                                                ModState.setReplyMode(ModState.REPLY_MODE_CUSTOM);
+                                                ModConfig.save();
+                                                ctx.getSource().sendFeedback(
+                                                        ChatUtil.badge().append(Text.literal("Custom sounds set to " + String.join(", ", ModState.CUSTOM_REPLIES) + " (mode: custom)")
+                                                                .formatted(Formatting.GREEN))
+                                                );
+                                                return 1;
+                                            })
+                                    )
+                            )
             );
         });
     }

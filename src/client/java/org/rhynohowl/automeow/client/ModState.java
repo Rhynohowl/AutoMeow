@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -115,6 +116,104 @@ public final class ModState {
         if (canon == null) return false;
         REPLY_TEXT = canon;
         return true;
+    }
+
+    public static final String REPLY_MODE_SINGLE = "SINGLE";
+    public static final String REPLY_MODE_CAT = "CAT";
+    public static final String REPLY_MODE_DOG = "DOG";
+    public static final String REPLY_MODE_CUSTOM = "CUSTOM";
+    public static final List<String> REPLY_MODES = List.of(REPLY_MODE_SINGLE, REPLY_MODE_CAT, REPLY_MODE_DOG, REPLY_MODE_CUSTOM);
+    public static volatile String REPLY_MODE = REPLY_MODE_SINGLE;
+
+    public static final List<String> CAT_REPLIES = List.of("meow", "mrrp", "mrrrp", "mrow", "mrraow", "mew", "nya", "purr");
+    public static final List<String> DOG_REPLIES = List.of("bark", "woof", "wruff", "grrr", "arf", "awoo", "awrf", "awruf");
+    public static final List<String> DEFAULT_CUSTOM_REPLIES = List.of("meow", "mrrp", "mrow", "nya");
+    public static volatile List<String> CUSTOM_REPLIES = DEFAULT_CUSTOM_REPLIES;
+
+    public static final int RECENT_MESSAGES_REMEMBERED = 3;
+    public static final int MIN_CUSTOM_REPLIES = RECENT_MESSAGES_REMEMBERED + 1;
+    private static final java.util.ArrayDeque<String> RECENT_SENT_MESSAGES = new java.util.ArrayDeque<>();
+
+    public static void setReplyMode(String mode) {
+        String matched = matchOption(mode, REPLY_MODES);
+        REPLY_MODE = matched != null ? matched : REPLY_MODE_SINGLE;
+    }
+
+    public static String replyModeName(String mode) {
+        if (REPLY_MODE_CAT.equals(mode)) return "Cat (random)";
+        if (REPLY_MODE_DOG.equals(mode)) return "Dog (random)";
+        if (REPLY_MODE_CUSTOM.equals(mode)) return "Custom (random)";
+        return "Single (Reply text)";
+    }
+
+    public static String matchReplyMode(String input) {
+        if (input == null) return null;
+        String wanted = input.trim();
+        for (String mode : REPLY_MODES) {
+            if (mode.equalsIgnoreCase(wanted) || replyModeName(mode).equalsIgnoreCase(wanted)) return mode;
+        }
+        return null;
+    }
+
+    public static boolean isRandomReplyMode() {
+        return !REPLY_MODE_SINGLE.equals(REPLY_MODE);
+    }
+
+    public static List<String> replyPool() {
+        return switch (REPLY_MODE) {
+            case REPLY_MODE_CAT -> CAT_REPLIES;
+            case REPLY_MODE_DOG -> DOG_REPLIES;
+            case REPLY_MODE_CUSTOM -> CUSTOM_REPLIES;
+            default -> List.of(REPLY_TEXT);
+        };
+    }
+
+    public static void setCustomReplies(List<String> replies) {
+        if (replies == null) {
+            CUSTOM_REPLIES = DEFAULT_CUSTOM_REPLIES;
+            return;
+        }
+        List<String> cleaned = new ArrayList<>();
+        for (String preset : REPLY_PRESETS) {
+            for (String reply : replies) {
+                if (preset.equalsIgnoreCase(canonicalPresetOrNull(reply))) {
+                    cleaned.add(preset);
+                    break;
+                }
+            }
+        }
+        CUSTOM_REPLIES = List.copyOf(cleaned);
+    }
+
+    public static synchronized void rememberSent(String text) {
+        if (text == null || text.isBlank()) return;
+        String sent = text.trim();
+        if (sent.equalsIgnoreCase(RECENT_SENT_MESSAGES.peekFirst())) return;
+        RECENT_SENT_MESSAGES.addFirst(sent);
+        while (RECENT_SENT_MESSAGES.size() > RECENT_MESSAGES_REMEMBERED) {
+            RECENT_SENT_MESSAGES.removeLast();
+        }
+    }
+
+    public static synchronized List<String> recentSentMessages() {
+        return List.copyOf(RECENT_SENT_MESSAGES);
+    }
+
+    private static boolean sentRecently(String text) {
+        for (String sent : recentSentMessages()) {
+            if (sent.equalsIgnoreCase(text.trim())) return true;
+        }
+        return false;
+    }
+
+    public static String pickReply(String suffix) {
+        if (!isRandomReplyMode()) return REPLY_TEXT;
+        List<String> options = new ArrayList<>();
+        for (String reply : replyPool()) {
+            if (!sentRecently(reply + suffix)) options.add(reply);
+        }
+        if (options.isEmpty()) return null;
+        return options.get(ThreadLocalRandom.current().nextInt(options.size()));
     }
 
     public static void setGradientColours(List<String> colours) {

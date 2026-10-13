@@ -37,6 +37,7 @@ public class AutomeowClient implements ClientModInitializer {
         // Count outgoing messages YOU type; start a quiet window if you typed "meow"
         ClientSendMessageEvents.CHAT.register(msg -> {
             if (msg == null) return;
+            ModState.rememberSent(msg);
 
             // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
             if (MEOW.matcher(msg).find()) {
@@ -68,6 +69,13 @@ public class AutomeowClient implements ClientModInitializer {
 
             String payload = rawCmd.substring(head.length()).trim();
             if (payload.isEmpty()) return;
+
+            if (head.equals("msg") || head.equals("tell") || head.equals("w")) {
+                String[] targetAndText = payload.split("\\s+", 2);
+                ModState.rememberSent(targetAndText.length > 1 ? targetAndText[1] : "");
+            } else {
+                ModState.rememberSent(payload);
+            }
 
             if (MEOW.matcher(payload).find()) {
                 ModState.startTimer();
@@ -267,7 +275,8 @@ public class AutomeowClient implements ClientModInitializer {
         if (ch != HpChannel.PARTY) {
             int have = ModState.counter(ch).get();
 
-            if (have < ModState.MY_MESSAGES_REQUIRED || now < ModState.cooldownUntil.get()){
+            boolean needMessages = !ModState.isRandomReplyMode() && have < ModState.MY_MESSAGES_REQUIRED;
+            if (needMessages || now < ModState.cooldownUntil.get()){
                 ChatUtil.debug("blocked: need msgs OR time (have=" + have + "/" + ModState.MY_MESSAGES_REQUIRED +
                         ", timeLeft=" + (ModState.cooldownUntil.get() - now) + "ms, chan=" + ch + ")");
                 return;
@@ -293,9 +302,16 @@ public class AutomeowClient implements ClientModInitializer {
         ChatUtil.debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
 
         if (mc.player != null && mc.player.networkHandler != null) {
+            String face = ModState.APPEND_FACE.get() ? " :3" : "";
+            String reply = ModState.pickReply(face);
+            if (reply == null) {
+                ChatUtil.debug("blocked: every reply was in your last " + ModState.RECENT_MESSAGES_REMEMBERED + " messages " + ModState.recentSentMessages());
+                return;
+            }
+
             ModState.skipNextOwnIncrement.set(true);
 
-            String out = ModState.REPLY_TEXT + (ModState.APPEND_FACE.get() ? " :3" : "");
+            String out = reply + face;
 
             if (!ModState.ON_HYPIXEL.get() && ch == HpChannel.PM) {
                 String target = lastWhisperFrom;
@@ -311,6 +327,7 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.skipNextOwnIncrement.set(true);
                 ModState.counter(ch).set(0);
                 ModState.startTimer();
+                ModState.rememberSent(out);
                 mc.player.networkHandler.sendChatCommand(cmd);
 
                 CatCue.triggerCatCueAt(mc.player);
@@ -342,6 +359,7 @@ public class AutomeowClient implements ClientModInitializer {
                                 return;
                             }
                             if (mc.player != null && mc.player.networkHandler != null) {
+                                ModState.rememberSent(out);
                                 mc.player.networkHandler.sendChatCommand(cmd);
                                 CatCue.triggerCatCueAt(mc.player);
                                 ModState.incrementReplyCount();
@@ -360,6 +378,7 @@ public class AutomeowClient implements ClientModInitializer {
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                 }
+                ModState.rememberSent(out);
                 mc.player.networkHandler.sendChatMessage(out);
             }
 

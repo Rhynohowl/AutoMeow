@@ -25,6 +25,8 @@ public final class ModConfig {
         float gradientSpeed = ModState.DEFAULT_GRADIENT_SPEED;
         boolean gradientLoop = true;
         String replyText = "meow";
+        String replyMode = ModState.REPLY_MODE_SINGLE;
+        List<String> customReplies = new ArrayList<>(ModState.DEFAULT_CUSTOM_REPLIES);
         boolean appendFace = false;
         boolean playSound = true;
         boolean heartsEffect = true;
@@ -88,6 +90,8 @@ public final class ModConfig {
             if (!ModState.setReplyText(CONFIG.replyText != null ? CONFIG.replyText : "meow")) {
                 ModState.REPLY_TEXT = ModState.DEFAULT_REPLY_TEXT;
             }
+            ModState.setReplyMode(CONFIG.replyMode);
+            ModState.setCustomReplies(CONFIG.customReplies);
 
         } catch (Exception ignored) {
         }
@@ -109,6 +113,8 @@ public final class ModConfig {
             CONFIG.gradientSpeed = ModState.GRADIENT_SPEED;
             CONFIG.gradientLoop = ModState.GRADIENT_LOOP.get();
             CONFIG.replyText = ModState.REPLY_TEXT;
+            CONFIG.replyMode = ModState.REPLY_MODE;
+            CONFIG.customReplies = new ArrayList<>(ModState.CUSTOM_REPLIES);
             CONFIG.appendFace = ModState.APPEND_FACE.get();
             CONFIG.playSound = ModState.PLAY_SOUND.get();
             CONFIG.heartsEffect = ModState.HEARTS_EFFECT.get();

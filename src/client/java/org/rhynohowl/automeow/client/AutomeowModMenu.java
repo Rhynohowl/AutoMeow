@@ -5,7 +5,9 @@ import com.terraformersmc.modmenu.api.ModMenuApi;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
+import me.shedaniel.clothconfig2.gui.entries.BooleanListEntry;
 import me.shedaniel.clothconfig2.gui.entries.ColorEntry;
+import me.shedaniel.clothconfig2.gui.entries.DropdownBoxEntry;
 import me.shedaniel.clothconfig2.gui.entries.NestedListListEntry;
 import me.shedaniel.clothconfig2.impl.builders.DropdownMenuBuilder;
 import me.shedaniel.clothconfig2.impl.builders.SubCategoryBuilder;
@@ -227,6 +229,38 @@ public class AutomeowModMenu implements ModMenuApi {
                             .build()
             );
 
+            List<BooleanListEntry> customReplyToggles = new ArrayList<>();
+            List<String> customSelection = new ArrayList<>(ModState.CUSTOM_REPLIES);
+
+            DropdownBoxEntry<String> replyModeEntry = eb.startDropdownMenu(
+                            Text.literal("Reply mode"),
+                            DropdownMenuBuilder.TopCellElementBuilder.of(
+                                    ModState.REPLY_MODE,
+                                    ModState::matchReplyMode,
+                                    mode -> Text.literal(mode == null ? "" : ModState.replyModeName(mode))
+                            ),
+                            DropdownMenuBuilder.CellCreatorBuilder.of(
+                                    14,
+                                    140,
+                                    8,
+                                    mode -> Text.literal(mode == null ? "" : ModState.replyModeName(mode))
+                            )
+                    )
+                    .setSelections(new LinkedHashSet<>(ModState.REPLY_MODES))
+                    .setSaveConsumer(val -> ModState.setReplyMode(val))
+                    .setTooltip(Text.literal("Single sends your Reply text and uses \"My messages required\".\n"
+                            + "Cat, Dog and Custom pick a random sound every reply that isn't\n"
+                            + "one of your last " + ModState.RECENT_MESSAGES_REMEMBERED + " messages, so \"My messages required\" is skipped."))
+                    .build();
+            replyModeEntry.setErrorSupplier(() -> {
+                if (!ModState.REPLY_MODE_CUSTOM.equals(replyModeEntry.getValue())) return Optional.empty();
+                long ticked = customReplyToggles.stream().filter(BooleanListEntry::getValue).count();
+                return ticked < ModState.MIN_CUSTOM_REPLIES
+                        ? Optional.of(Text.literal("Custom needs at least " + ModState.MIN_CUSTOM_REPLIES + " sounds ticked"))
+                        : Optional.empty();
+            });
+            general.addEntry(replyModeEntry);
+
             general.addEntry(
                     eb.startDropdownMenu(
                                     Text.literal("Reply text"),
@@ -247,6 +281,22 @@ public class AutomeowModMenu implements ModMenuApi {
                             .setSaveConsumer(selectedPreset -> ModState.setReplyText(selectedPreset))
                             .build()
             );
+
+            SubCategoryBuilder customRepliesCategory = eb.startSubCategory(Text.literal("Custom replies")).setExpanded(false);
+            for (String preset : ModState.REPLY_PRESETS) {
+                BooleanListEntry toggle = eb.startBooleanToggle(Text.literal(preset), ModState.CUSTOM_REPLIES.contains(preset))
+                        .setDefaultValue(ModState.DEFAULT_CUSTOM_REPLIES.contains(preset))
+                        .setSaveConsumer(val -> {
+                            customSelection.remove(preset);
+                            if (val) customSelection.add(preset);
+                            ModState.setCustomReplies(customSelection);
+                        })
+                        .build();
+                customReplyToggles.add(toggle);
+                customRepliesCategory.add(toggle);
+            }
+            customRepliesCategory.setTooltip(Text.literal("Sounds the Custom reply mode picks from.\nTick at least " + ModState.MIN_CUSTOM_REPLIES + "."));
+            general.addEntry(customRepliesCategory.build());
 
             // Play meow sound
             general.addEntry(
