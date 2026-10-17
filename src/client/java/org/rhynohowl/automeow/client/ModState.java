@@ -99,7 +99,9 @@ public final class ModState {
             "arf",
             "awoo",
             "awrf",
-            "awruf"
+            "awruf",
+            "yip",
+            "yap"
     );
 
     public static void incrementReplyCount() {
@@ -122,11 +124,13 @@ public final class ModState {
     public static final String REPLY_MODE_SINGLE = "SINGLE";
     public static final String REPLY_MODE_CAT = "CAT";
     public static final String REPLY_MODE_DOG = "DOG";
+    public static final String REPLY_MODE_FOX = "FOX";
     public static final String REPLY_MODE_CUSTOM = "CUSTOM";
-    public static final List<String> REPLY_MODES = List.of(REPLY_MODE_SINGLE, REPLY_MODE_CAT, REPLY_MODE_DOG, REPLY_MODE_CUSTOM);
+    public static final List<String> REPLY_MODES = List.of(REPLY_MODE_SINGLE, REPLY_MODE_CAT, REPLY_MODE_DOG, REPLY_MODE_FOX, REPLY_MODE_CUSTOM);
     public static volatile String REPLY_MODE = REPLY_MODE_SINGLE;
 
     public static final List<String> CAT_REPLIES = List.of("meow", "mrrp", "mrrrp", "mrow", "mrraow", "mew", "nya", "purr");
+    public static final List<String> FOX_REPLIES = List.of("yip", "yap", "grrr", "purr");
     public static final List<String> DOG_REPLIES = List.of("bark", "woof", "wruff", "grrr", "arf", "awoo", "awrf", "awruf");
     public static final List<String> DEFAULT_CUSTOM_REPLIES = List.of("meow", "mrrp", "mrow", "nya");
     public static volatile List<String> CUSTOM_REPLIES = DEFAULT_CUSTOM_REPLIES;
@@ -143,6 +147,7 @@ public final class ModState {
     public static String replyModeName(String mode) {
         if (REPLY_MODE_CAT.equals(mode)) return "Cat (random)";
         if (REPLY_MODE_DOG.equals(mode)) return "Dog (random)";
+        if (REPLY_MODE_FOX.equals(mode)) return "Fox (random)";
         if (REPLY_MODE_CUSTOM.equals(mode)) return "Custom (random)";
         return "Single (Reply text)";
     }
@@ -164,6 +169,7 @@ public final class ModState {
         return switch (REPLY_MODE) {
             case REPLY_MODE_CAT -> CAT_REPLIES;
             case REPLY_MODE_DOG -> DOG_REPLIES;
+            case REPLY_MODE_FOX -> FOX_REPLIES;
             case REPLY_MODE_CUSTOM -> CUSTOM_REPLIES;
             default -> List.of(REPLY_TEXT);
         };
