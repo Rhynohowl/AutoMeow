@@ -9,19 +9,23 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import com.mojang.authlib.GameProfile;
 
 public final class CatFact {
     private static final HttpClient catFactHttpClient = HttpClient.newHttpClient();
 
     // yes, seriously. the API says this shit ... evil evil evil >:C
-    private static final List<String> BANNED_WORDS = List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer", "Main Coon");
+    private static final List<String> BANNED_WORDS = List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer", "maine coon");
+    private static final Pattern BANNED_PATTERN = Pattern.compile(
+            "\\b(?:" + BANNED_WORDS.stream().map(Pattern::quote).collect(Collectors.joining("|")) + ")(?:s|es|d|ed|ing)?\\b",
+            Pattern.CASE_INSENSITIVE
+    );
 
     public static final Pattern PM_TARGET_PATTERN = Pattern.compile("(?i)(?:To|From)\\s+(?:\\[[^\\]]+\\]\\s*)*([A-Za-z0-9_]{3,16})\\s*:");
 
@@ -89,8 +93,7 @@ public final class CatFact {
                         JsonObject parsedJsonResponse = JsonParser.parseString(apiHttpResponse.body()).getAsJsonObject();
                         String factText = parsedJsonResponse.get("fact").getAsString();
 
-                        String lowerFactText = factText.toLowerCase(Locale.ROOT);
-                        boolean hasBannedWord = BANNED_WORDS.stream().anyMatch(lowerFactText::contains);
+                        boolean hasBannedWord = BANNED_PATTERN.matcher(factText).find();
 
                         if (hasBannedWord) {
                             retryFetchCatFact(onFactRetrieved, currentRetryCount + 1);
