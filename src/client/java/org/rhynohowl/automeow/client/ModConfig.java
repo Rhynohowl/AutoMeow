@@ -17,6 +17,8 @@ public final class ModConfig {
     // Toggles
     public static class Data {
         boolean enabled = true;
+        int myMessagesRequired = 3;
+        long quietAfterSendMs = 3500L;
         boolean chroma = false;
         boolean gradient = false;
         String gradientPreset = ModState.CUSTOM_GRADIENT_PRESET;
@@ -64,6 +66,8 @@ public final class ModConfig {
             }
 
             ModState.ENABLED.set(CONFIG.enabled);
+            ModState.MY_MESSAGES_REQUIRED = Math.max(0, Math.min(CONFIG.myMessagesRequired, 10));
+            ModState.QUIET_AFTER_SEND_MS = Math.max(0L, Math.min(CONFIG.quietAfterSendMs, 20000L));
             ModState.CHROMA_WANTED.set(CONFIG.chroma);
             ModState.GRADIENT_WANTED.set(CONFIG.gradient);
             ModState.setBadgeStyle(ModState.badgeStyle());
@@ -105,6 +109,8 @@ public final class ModConfig {
                 CONFIG_PATH = dir.resolve("automeow.json");
             }
             CONFIG.enabled = ModState.ENABLED.get();
+            CONFIG.myMessagesRequired = ModState.MY_MESSAGES_REQUIRED;
+            CONFIG.quietAfterSendMs = ModState.QUIET_AFTER_SEND_MS;
             CONFIG.chroma = ModState.CHROMA_WANTED.get();
             CONFIG.gradient = ModState.GRADIENT_WANTED.get();
             CONFIG.gradientPreset = ModState.GRADIENT_PRESET;
