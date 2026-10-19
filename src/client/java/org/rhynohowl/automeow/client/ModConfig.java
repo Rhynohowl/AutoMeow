@@ -44,6 +44,7 @@ public final class ModConfig {
         boolean catfactSelfOnly = true;
         float baseVolume    = 0.8f;
         float volumeJitter  = 0.15f;
+        float basePitch     = 1.0f;
         float pitchJitter   = 0.10f;
         long totalReplies = 0L;
     }

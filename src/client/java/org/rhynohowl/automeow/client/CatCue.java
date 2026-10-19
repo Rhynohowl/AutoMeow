@@ -17,9 +17,9 @@ public final class CatCue {
         if (ModState.PLAY_SOUND.get()) {
             var random = mc.world.getRandom();
             float vol = clampf(jitterAround(ModConfig.CONFIG.baseVolume, ModConfig.CONFIG.volumeJitter, random), 0.0f, 2.0f);
-            float pitch = clampf(jitterAround(ModConfig.CONFIG.baseVolume, ModConfig.CONFIG.pitchJitter, random), 0.5f, 2.0f);
-            mc.world.playSound(target, target.getX(), target.getY(), target.getZ(),
-                    SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.PLAYERS, vol, pitch);
+            float pitch = clampf(jitterAround(ModConfig.CONFIG.basePitch, ModConfig.CONFIG.pitchJitter, random), 0.5f, 2.0f);
+            mc.world.playSoundClient(target.getX(), target.getY(), target.getZ(),
+                    SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.PLAYERS, vol, pitch, false);
         }
 
         if (ModState.HEARTS_EFFECT.get()) {
