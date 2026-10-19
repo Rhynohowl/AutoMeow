@@ -36,6 +36,7 @@ public final class ModState {
     public static final AtomicBoolean PLAY_SOUND = new AtomicBoolean(true);
     public static final AtomicBoolean HEARTS_EFFECT = new AtomicBoolean(true);
     public static final AtomicBoolean manualSendPending = new AtomicBoolean(false);
+    public static final AtomicBoolean autoSending = new AtomicBoolean(false);
     public static final AtomicBoolean DEBUG = new AtomicBoolean(false);
     public static final AtomicBoolean ON_HYPIXEL = new AtomicBoolean(false);
     public static final AtomicBoolean APPEND_FACE = new AtomicBoolean(true);
@@ -74,6 +75,15 @@ public final class ModState {
 
     public static AtomicInteger counter(HpChannel ch) {
         return msgsSinceReply.get(ch);
+    }
+
+    public static void runAutoSend(Runnable send) {
+        autoSending.set(true);
+        try {
+            send.run();
+        } finally {
+            autoSending.set(false);
+        }
     }
 
     public static void startTimer() {

@@ -48,7 +48,7 @@ public final class CatFact {
             CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS)
                     .execute(() -> mc.execute(() -> {
                         if (mc.player != null && mc.player.networkHandler != null) {
-                            mc.player.networkHandler.sendChatCommand(commandPrefix + fact);
+                            ModState.runAutoSend(() -> mc.player.networkHandler.sendChatCommand(commandPrefix + fact));
                         }
                     }));
         });

@@ -22,7 +22,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|m+a+ m+o+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r+u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|a+w+r+u*f+s*|y+i+p+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|m+a+ m+o+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r*u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|a+w+r+u*f+s*|y+i+p+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern SENDER_PREFIX = Pattern.compile("^[^:]*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
@@ -38,6 +38,7 @@ public class AutomeowClient implements ClientModInitializer {
         ClientSendMessageEvents.CHAT.register(msg -> {
             if (msg == null) return;
             ModState.rememberSent(msg);
+            if (ModState.autoSending.get()) return;
 
             // If you typed a cat-sound, play local cue for yourself (independent of auto-reply logic)
             if (MEOW.matcher(msg).find()) {
@@ -76,6 +77,7 @@ public class AutomeowClient implements ClientModInitializer {
             } else {
                 ModState.rememberSent(payload);
             }
+            if (ModState.autoSending.get()) return;
 
             if (MEOW.matcher(payload).find()) {
                 ModState.startTimer();
@@ -329,7 +331,7 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.counter(ch).set(0);
                 ModState.startTimer();
                 ModState.rememberSent(out);
-                mc.player.networkHandler.sendChatCommand(cmd);
+                ModState.runAutoSend(() -> mc.player.networkHandler.sendChatCommand(cmd));
 
                 CatCue.triggerCatCueAt(mc.player);
                 ModState.incrementReplyCount();
@@ -361,7 +363,7 @@ public class AutomeowClient implements ClientModInitializer {
                             }
                             if (mc.player != null && mc.player.networkHandler != null) {
                                 ModState.rememberSent(out);
-                                mc.player.networkHandler.sendChatCommand(cmd);
+                                ModState.runAutoSend(() -> mc.player.networkHandler.sendChatCommand(cmd));
                                 CatCue.triggerCatCueAt(mc.player);
                                 ModState.incrementReplyCount();
                                 if (finalCh != HpChannel.PARTY) ModState.counter(finalCh).set(0);
@@ -380,7 +382,7 @@ public class AutomeowClient implements ClientModInitializer {
                     Thread.currentThread().interrupt();
                 }
                 ModState.rememberSent(out);
-                mc.player.networkHandler.sendChatMessage(out);
+                ModState.runAutoSend(() -> mc.player.networkHandler.sendChatMessage(out));
             }
 
             CatCue.triggerCatCueAt(mc.player);
