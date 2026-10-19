@@ -1,29 +1,18 @@
 package org.rhynohowl.automeow.client;
 
 //? if >=26.1 {
-/*import me.owdding.lib.rendering.text.TextShaderKt;
+/*import me.owdding.lib.rendering.text.PrideShader;
+import me.owdding.lib.rendering.text.TextShaderKt;
 import me.owdding.lib.rendering.text.builtin.GradientTextShader;
 import net.minecraft.text.Style;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class MeowddingShader {
-    private static final String PRIDE_SHADER_CLASS = "me.owdding.lib.rendering.text.PrideShader";
-
-    private static Object[] prideShaders() {
-        try {
-            Object[] constants = Class.forName(PRIDE_SHADER_CLASS).getEnumConstants();
-            return constants != null ? constants : new Object[0];
-        } catch (Throwable ignored) {
-            return new Object[0];
-        }
-    }
-
     public static List<String> presetNames() {
         List<String> names = new ArrayList<>();
-        for (Object preset : prideShaders()) {
-            names.add(((Enum<?>) preset).name());
+        for (PrideShader preset : PrideShader.values()) {
+            names.add(preset.name());
         }
         return names;
     }
@@ -43,17 +32,10 @@ public final class MeowddingShader {
         return TextShaderKt.withTextShader(style, shader);
     }
 
-    @SuppressWarnings("unchecked")
     private static List<Integer> presetColours() {
         if (ModState.CUSTOM_GRADIENT_PRESET.equals(ModState.GRADIENT_PRESET)) return null;
-        for (Object preset : prideShaders()) {
-            if (!((Enum<?>) preset).name().equals(ModState.GRADIENT_PRESET)) continue;
-            try {
-                Method getColors = preset.getClass().getMethod("getColors");
-                return new ArrayList<>((List<Integer>) getColors.invoke(preset));
-            } catch (Throwable ignored) {
-                return null;
-            }
+        for (PrideShader preset : PrideShader.values()) {
+            if (preset.name().equals(ModState.GRADIENT_PRESET)) return new ArrayList<>(preset.getColors());
         }
         return null;
     }

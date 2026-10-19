@@ -55,6 +55,9 @@ dependencies {
         implementation "net.fabricmc.fabric-api:fabric-api:${project.property('deps.fabric_version')}"
         implementation "com.terraformersmc:modmenu:${project.property('deps.modmenu_version')}"
         implementation "me.shedaniel.cloth:cloth-config-fabric:${project.property('deps.cloth_config_version')}"
+        compileOnly("com.teamresourceful.resourcefulconfig:resourcefulconfig-fabric-${project.minecraft_version}:${project.property('deps.resourceful_config')}") {
+            transitive = false
+        }
         compileOnly("me.owdding.meowdding-lib:meowdding-lib:${project.property('deps.meowdding-lib')}") {
             transitive = false
             capabilities {
