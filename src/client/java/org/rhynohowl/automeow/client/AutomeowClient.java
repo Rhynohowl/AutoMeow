@@ -161,7 +161,7 @@ public class AutomeowClient implements ClientModInitializer {
         }
 
         if (ModState.ON_HYPIXEL.get()) {
-            String myNameEarly = mc.player != null ? mc.player.getGameProfile().name() : null;
+            String myNameEarly = mc.player.getGameProfile().name();
             if (myNameEarly != null) {
                 String rawStripped = raw.replaceAll("§.", "").trim();
                 if (rawStripped.toLowerCase(Locale.ROOT).startsWith("from")
@@ -227,8 +227,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (MEOW.matcher(raw).find()) {
             PlayerEntity src = CatCue.resolveSender(mc, sender, raw);
             if (src != null) {
-                UUID me = mc.getSession().getUuidOrNull();
-                if (me == null || !me.equals(src.getUuid())) {
+                if (meUUID == null || !meUUID.equals(src.getUuid())) {
                     mc.execute(() -> CatCue.triggerCatCueAt(src));
                 }
             }
@@ -268,13 +267,6 @@ public class AutomeowClient implements ClientModInitializer {
             return;
         }
 
-        // ignore our own lines (when CHAT provides a sender)
-        UUID me = mc.getSession().getUuidOrNull();
-        if (sender != null && me != null && me.equals(sender.id())) {
-            ChatUtil.debug("ignored: own message");
-            return;
-        }
-
         if (ch != HpChannel.PARTY) {
             int have = ModState.counter(ch).get();
 
@@ -292,19 +284,17 @@ public class AutomeowClient implements ClientModInitializer {
         }
 
         if (ch == HpChannel.PM && !isVanillaWhisper) {
-            if (!HpChannel.vanillaWhisperPattern().matcher(clean).find()) {
-                String header = clean.split(":", 2)[0];
+            String header = clean.split(":", 2)[0];
 
-                Matcher usernameFinder = Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b").matcher(header);
-                String found = null;
-                while (usernameFinder.find()) found = usernameFinder.group(1);
-                if (found != null) lastWhisperFrom = found;
-            }
+            Matcher usernameFinder = Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b").matcher(header);
+            String found = null;
+            while (usernameFinder.find()) found = usernameFinder.group(1);
+            if (found != null) lastWhisperFrom = found;
         }
 
         ChatUtil.debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
 
-        if (mc.player != null && mc.player.networkHandler != null) {
+        if (mc.player.networkHandler != null) {
             String face = ModState.APPEND_FACE.get() ? " :3" : "";
             String reply = ModState.pickReply(face);
             if (reply == null) {
@@ -327,7 +317,6 @@ public class AutomeowClient implements ClientModInitializer {
                 String cmd = "msg " + target + " " + out;
                 ChatUtil.debug("sending: /" + cmd);
 
-                ModState.skipNextOwnIncrement.set(true);
                 ModState.counter(ch).set(0);
                 ModState.startTimer();
                 ModState.rememberSent(out);
@@ -350,7 +339,6 @@ public class AutomeowClient implements ClientModInitializer {
                 };
                 ChatUtil.debug("sending: " + cmd);
                 ChatUtil.debug("detected channel: " + ch);
-                ModState.skipNextOwnIncrement.set(true);
                 ModState.startTimer();
                 ModState.manualSendPending.set(false);
                 final HpChannel finalCh = ch;
@@ -373,14 +361,8 @@ public class AutomeowClient implements ClientModInitializer {
             } else {
                 ChatUtil.debug("sending: " + out);
                 ChatUtil.debug("detected channel: " + ch);
-                ModState.skipNextOwnIncrement.set(true);
                 ModState.startTimer();
                 ModState.manualSendPending.set(false);
-                try {
-                    Thread.sleep(1);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                }
                 ModState.rememberSent(out);
                 ModState.runAutoSend(() -> mc.player.networkHandler.sendChatMessage(out));
             }

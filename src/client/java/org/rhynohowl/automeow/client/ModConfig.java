@@ -29,7 +29,7 @@ public final class ModConfig {
         String replyText = "meow";
         String replyMode = ModState.REPLY_MODE_SINGLE;
         List<String> customReplies = new ArrayList<>(ModState.DEFAULT_CUSTOM_REPLIES);
-        boolean appendFace = false;
+        boolean appendFace = true;
         boolean playSound = true;
         boolean heartsEffect = true;
         boolean channelPublic = true;

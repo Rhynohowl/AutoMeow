@@ -501,7 +501,7 @@ public final class AutomeowCommands {
                                                 return suggestion.buildFuture();
                                             })
                                             .executes(ctx -> {
-                                                String matched = ModState.matchReplyMode(StringArgumentType.getString(ctx, "mode"));
+                                                String matched = ModState.matchOption(StringArgumentType.getString(ctx, "mode"), ModState.REPLY_MODES, ModState::replyModeName);
 
                                                 if (matched == null) {
                                                     ctx.getSource().sendFeedback(

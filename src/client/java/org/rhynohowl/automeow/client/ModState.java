@@ -8,6 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 public final class ModState {
     // Tunables
@@ -125,7 +126,7 @@ public final class ModState {
     public static volatile String REPLY_TEXT = DEFAULT_REPLY_TEXT;
 
     public static boolean setReplyText(String requestedText) {
-        String canon = canonicalPresetOrNull(requestedText);
+        String canon = matchOption(requestedText, REPLY_PRESETS);
         if (canon == null) return false;
         REPLY_TEXT = canon;
         return true;
@@ -162,15 +163,6 @@ public final class ModState {
         return "Single (Reply text)";
     }
 
-    public static String matchReplyMode(String input) {
-        if (input == null) return null;
-        String wanted = input.trim();
-        for (String mode : REPLY_MODES) {
-            if (mode.equalsIgnoreCase(wanted) || replyModeName(mode).equalsIgnoreCase(wanted)) return mode;
-        }
-        return null;
-    }
-
     public static boolean isRandomReplyMode() {
         return !REPLY_MODE_SINGLE.equals(REPLY_MODE);
     }
@@ -193,7 +185,7 @@ public final class ModState {
         List<String> cleaned = new ArrayList<>();
         for (String preset : REPLY_PRESETS) {
             for (String reply : replies) {
-                if (preset.equalsIgnoreCase(canonicalPresetOrNull(reply))) {
+                if (preset.equals(matchOption(reply, REPLY_PRESETS))) {
                     cleaned.add(preset);
                     break;
                 }
@@ -266,20 +258,17 @@ public final class ModState {
         return options;
     }
 
-    public static String matchBadgeStyle(String input, List<String> options) {
+    public static String matchOption(String input, List<String> options) {
+        return matchOption(input, options, option -> option);
+    }
+
+    public static String matchOption(String input, List<String> options, Function<String, String> displayName) {
         if (input == null) return null;
         String wanted = input.trim();
         for (String option : options) {
-            if (option.equalsIgnoreCase(wanted.replace(' ', '_')) || badgeStyleName(option).equalsIgnoreCase(wanted)) return option;
-        }
-        return null;
-    }
-
-    public static String matchOption(String input, List<String> options) {
-        if (input == null) return null;
-        String wanted = input.trim().replace(' ', '_');
-        for (String option : options) {
-            if (option.equalsIgnoreCase(wanted)) return option;
+            if (option.equalsIgnoreCase(wanted)
+                    || option.equalsIgnoreCase(wanted.replace(' ', '_'))
+                    || displayName.apply(option).equalsIgnoreCase(wanted)) return option;
         }
         return null;
     }
@@ -302,14 +291,5 @@ public final class ModState {
 
     public static void setGradientSpeed(float speed) {
         GRADIENT_SPEED = Math.max(GRADIENT_SPEED_MIN, Math.min(speed, GRADIENT_SPEED_MAX));
-    }
-
-    private static String canonicalPresetOrNull(String input) {
-        if (input == null) return null;
-        String trimed = input.trim();
-        for (String option : REPLY_PRESETS) {
-            if (option.equalsIgnoreCase(trimed)) return option;
-        }
-        return null;
     }
 }
