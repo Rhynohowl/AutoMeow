@@ -1,7 +1,6 @@
 plugins {
     id("net.fabricmc.fabric-loom") version '1.16.3' apply false
     id("net.fabricmc.fabric-loom-remap") version '1.16.3' apply false
-    id 'maven-publish'
 }
 
 version = project.findProperty("mod_version") ?: "1.0.0"
@@ -34,12 +33,6 @@ loom {
             sourceSet sourceSets.main
             sourceSet sourceSets.client
         }
-    }
-}
-
-fabricApi {
-    configureDataGeneration {
-        client = true
     }
 }
 
@@ -103,19 +96,6 @@ java {
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesName.get()}" }
-    }
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
-            from components.java
-        }
-    }
-
-    repositories {
     }
 }
 
