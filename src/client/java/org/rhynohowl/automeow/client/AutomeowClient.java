@@ -26,6 +26,11 @@ public class AutomeowClient implements ClientModInitializer {
 
     private static final Pattern SENDER_PREFIX = Pattern.compile("^[^:]*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
+    private static final Pattern USERNAME = Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b");
+
+    private static String cachedOwnName = null;
+    private static Pattern cachedOwnNamePattern = null;
+
     @Override
     public void onInitializeClient() {
         ModConfig.load();
@@ -107,6 +112,7 @@ public class AutomeowClient implements ClientModInitializer {
             if (client.world != lastWorld) {
                 lastWorld = client.world;
                 refreshServerMode(client);
+                ModConfig.save();
 
                 for (HpChannel ch : HpChannel.values()) {
                     if (ch == HpChannel.IGNORE) continue;
@@ -114,6 +120,14 @@ public class AutomeowClient implements ClientModInitializer {
                 }
             }
         });
+    }
+
+    private static Pattern ownNamePattern(String myName) {
+        if (!myName.equals(cachedOwnName)) {
+            cachedOwnNamePattern = Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:");
+            cachedOwnName = myName;
+        }
+        return cachedOwnNamePattern;
     }
 
     private static void refreshServerMode(MinecraftClient mc) {
@@ -205,7 +219,7 @@ public class AutomeowClient implements ClientModInitializer {
 
         boolean isMe =
                 (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
-                        (myName != null && Pattern.compile(Pattern.quote(myName) + "\\s*\\S*\\s*:").matcher(clean).find()) ||
+                        (myName != null && ownNamePattern(myName).matcher(clean).find()) ||
                         (myName != null && clean.startsWith("<" + myName + ">"));
 
         boolean isOwnPm = ch == HpChannel.PM && clean.startsWith("To ");
@@ -286,7 +300,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (ch == HpChannel.PM && !isVanillaWhisper) {
             String header = clean.split(":", 2)[0];
 
-            Matcher usernameFinder = Pattern.compile("\\b([A-Za-z0-9_]{3,16})\\b").matcher(header);
+            Matcher usernameFinder = USERNAME.matcher(header);
             String found = null;
             while (usernameFinder.find()) found = usernameFinder.group(1);
             if (found != null) lastWhisperFrom = found;
