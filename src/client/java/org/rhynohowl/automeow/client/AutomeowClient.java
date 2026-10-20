@@ -6,10 +6,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.Component;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -18,7 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class AutomeowClient implements ClientModInitializer {
-    private static ClientWorld lastWorld = null;
+    private static ClientLevel lastWorld = null;
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
@@ -50,7 +50,7 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.startTimer();
                 ModState.manualSendPending.set(true);
                 ModState.incrementReplyCount();
-                MinecraftClient mcc = MinecraftClient.getInstance();
+                Minecraft mcc = Minecraft.getInstance();
                 if (mcc.player != null) {
                     mcc.execute(() -> CatCue.triggerCatCueAt(mcc.player));
                 }
@@ -88,7 +88,7 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.startTimer();
                 ModState.manualSendPending.set(true);
                 ModState.incrementReplyCount();
-                MinecraftClient mcc = MinecraftClient.getInstance();
+                Minecraft mcc = Minecraft.getInstance();
                 if (mcc.player != null) {
                     mcc.execute(() -> CatCue.triggerCatCueAt(mcc.player));
                 }
@@ -98,19 +98,19 @@ public class AutomeowClient implements ClientModInitializer {
         // React to incoming chat
         ClientReceiveMessageEvents.CHAT.register(
                 (message, signedMessage, sender, params, ts) -> {
-                    Text applyChatDecorationd = params.applyChatDecoration(message);
-                    MinecraftClient.getInstance().execute(() -> handleIncoming(applyChatDecorationd, sender, false));
+                    Component decorated = params.decorate(message);
+                    Minecraft.getInstance().execute(() -> handleIncoming(decorated, sender, false));
                 }
         );
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
             if (overlay) return;
-            MinecraftClient.getInstance().execute(() -> handleIncoming(message, null, true));
+            Minecraft.getInstance().execute(() -> handleIncoming(message, null, true));
         });
 
         // Reset counter on lobby/world change
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.world != lastWorld) {
-                lastWorld = client.world;
+            if (client.level != lastWorld) {
+                lastWorld = client.level;
                 refreshServerMode(client);
                 ModConfig.save();
 
@@ -130,18 +130,18 @@ public class AutomeowClient implements ClientModInitializer {
         return cachedOwnNamePattern;
     }
 
-    private static void refreshServerMode(MinecraftClient mc) {
-        var servercheck = mc.getCurrentServerEntry();
+    private static void refreshServerMode(Minecraft mc) {
+        var servercheck = mc.getCurrentServer();
         boolean hypixel = servercheck != null
-                && servercheck.address != null
-                && servercheck.address.toLowerCase(Locale.ROOT).contains("hypixel.net");
+                && servercheck.ip != null
+                && servercheck.ip.toLowerCase(Locale.ROOT).contains("hypixel.net");
         ModState.ON_HYPIXEL.set(hypixel);
     }
 
-    private void handleIncoming(Text message, GameProfile sender, boolean isSystemMessage) {
+    private void handleIncoming(Component message, GameProfile sender, boolean isSystemMessage) {
         if (!ModState.ENABLED.get()) { ChatUtil.debug("blocked: disabled"); return; }
 
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) { ChatUtil.debug("blocked: no player"); return; }
 
         String raw = message.getString();
@@ -214,7 +214,7 @@ public class AutomeowClient implements ClientModInitializer {
             return;
         }
 
-        UUID meUUID = mc.getSession().getUuidOrNull();
+        UUID meUUID = mc.getUser().getProfileId();
         String myName = mc.player.getGameProfile().name();
 
         boolean isMe =
@@ -239,9 +239,9 @@ public class AutomeowClient implements ClientModInitializer {
 
         // play SFX at player who meows & self
         if (MEOW.matcher(raw).find()) {
-            PlayerEntity src = CatCue.resolveSender(mc, sender, raw);
+            Player src = CatCue.resolveSender(mc, sender, raw);
             if (src != null) {
-                if (meUUID == null || !meUUID.equals(src.getUuid())) {
+                if (meUUID == null || !meUUID.equals(src.getUUID())) {
                     mc.execute(() -> CatCue.triggerCatCueAt(src));
                 }
             }
@@ -308,7 +308,7 @@ public class AutomeowClient implements ClientModInitializer {
 
         ChatUtil.debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
 
-        if (mc.player.networkHandler != null) {
+        if (mc.player.connection != null) {
             String face = ModState.APPEND_FACE.get() ? " :3" : "";
             String reply = ModState.pickReply(face);
             if (reply == null) {
@@ -334,7 +334,7 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.counter(ch).set(0);
                 ModState.startTimer();
                 ModState.rememberSent(out);
-                ModState.runAutoSend(() -> mc.player.networkHandler.sendChatCommand(cmd));
+                ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
 
                 CatCue.triggerCatCueAt(mc.player);
                 ModState.incrementReplyCount();
@@ -363,9 +363,9 @@ public class AutomeowClient implements ClientModInitializer {
                                 ChatUtil.debug("blocked: manual send detected");
                                 return;
                             }
-                            if (mc.player != null && mc.player.networkHandler != null) {
+                            if (mc.player != null && mc.player.connection != null) {
                                 ModState.rememberSent(out);
-                                ModState.runAutoSend(() -> mc.player.networkHandler.sendChatCommand(cmd));
+                                ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
                                 CatCue.triggerCatCueAt(mc.player);
                                 ModState.incrementReplyCount();
                                 if (finalCh != HpChannel.PARTY) ModState.counter(finalCh).set(0);
@@ -378,14 +378,14 @@ public class AutomeowClient implements ClientModInitializer {
                 ModState.startTimer();
                 ModState.manualSendPending.set(false);
                 ModState.rememberSent(out);
-                ModState.runAutoSend(() -> mc.player.networkHandler.sendChatMessage(out));
+                ModState.runAutoSend(() -> mc.player.connection.sendChat(out));
             }
 
             CatCue.triggerCatCueAt(mc.player);
             ModState.incrementReplyCount();
             if (ch != HpChannel.PARTY) ModState.counter(ch).set(0);
         } else {
-            ChatUtil.debug("blocked: no networkHandler");
+            ChatUtil.debug("blocked: no connection");
         }
     }
 }

@@ -2,7 +2,7 @@ package org.rhynohowl.automeow.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -29,7 +29,7 @@ public final class CatFact {
 
     public static final Pattern PM_TARGET_PATTERN = Pattern.compile("(?i)(?:To|From)\\s+(?:\\[[^\\]]+\\]\\s*)*([A-Za-z0-9_]{3,16})\\s*:");
 
-    public static void handle(MinecraftClient mc, HpChannel ch, String clean, GameProfile sender, String lastWhisperFrom) {
+    public static void handle(Minecraft mc, HpChannel ch, String clean, GameProfile sender, String lastWhisperFrom) {
         String target = null;
         if (ch == HpChannel.PM) {
             String fallback = (sender != null && !sender.name().isBlank())
@@ -51,8 +51,8 @@ public final class CatFact {
         fetchCatFact(fact -> {
             CompletableFuture.delayedExecutor(600, TimeUnit.MILLISECONDS)
                     .execute(() -> mc.execute(() -> {
-                        if (mc.player != null && mc.player.networkHandler != null) {
-                            ModState.runAutoSend(() -> mc.player.networkHandler.sendChatCommand(commandPrefix + fact));
+                        if (mc.player != null && mc.player.connection != null) {
+                            ModState.runAutoSend(() -> mc.player.connection.sendCommand(commandPrefix + fact));
                         }
                     }));
         });

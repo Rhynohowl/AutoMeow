@@ -1,10 +1,10 @@
 package org.rhynohowl.automeow.client;
 
 //? if >=26.1 {
-/*import me.owdding.lib.rendering.text.PrideShader;
+import me.owdding.lib.rendering.text.PrideShader;
 import me.owdding.lib.rendering.text.TextShaderKt;
 import me.owdding.lib.rendering.text.builtin.GradientTextShader;
-import net.minecraft.text.Style;
+import net.minecraft.network.chat.Style;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,4 +50,4 @@ public final class MeowddingShader {
         return colours;
     }
 }
-*///?}
+//?}

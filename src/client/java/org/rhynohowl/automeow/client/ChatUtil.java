@@ -1,10 +1,10 @@
 package org.rhynohowl.automeow.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.ChatFormatting;
 import java.util.Locale;
 
 public final class ChatUtil {
@@ -33,63 +33,63 @@ public final class ChatUtil {
 
     public static void debug(String msg) {
         if (!ModState.DEBUG.get()) return;
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
         mc.execute(() -> {
             //? if <26.1 {
-            if (mc.inGameHud != null) {
+            /*if (mc.inGameHud != null) {
                 mc.inGameHud.getChatHud().addMessage(
-                        badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY))
+                        badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY))
                 );
             }
-            //?} else if <26.2 {
-            /*mc.getChatListener().handleSystemMessage(
-                    badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY)), false
+            *///?} else if <26.2 {
+            mc.getChatListener().handleSystemMessage(
+                    badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY)), false
             );
-            *///?} else {
+            //?} else {
             /*mc.gui.chatListener().handleSystemMessage(
-                    badge().append(Text.literal("[DBG] " + msg).formatted(Formatting.DARK_GRAY)), false
+                    badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY)), false
             );*/
             //?}
         });
     }
 
     // [AutoMeow] Prefix
-    public static MutableText badge() {
+    public static MutableComponent badge() {
         boolean gradient = ModState.GRADIENT_WANTED.get() && MeowddingHelper.hasMeowdding();
         boolean chroma = !gradient && ModState.CHROMA_WANTED.get() && ChromaHelper.hasSkyhanni();
 
-        MutableText name = Text.literal("AutoMeow")
-                .styled(s -> s.withBold(false)
+        MutableComponent name = Component.literal("AutoMeow")
+                .withStyle(s -> s.withBold(false)
                         .withColor(chroma ? ChromaHelper.getChromaTextColor() : TextColor.fromRgb(PASTEL_PINK)));
         if (gradient) {
-            name = name.styled(s -> MeowddingHelper.applyGradient(s));
+            name = name.withStyle(s -> MeowddingHelper.applyGradient(s));
         }
 
-        return Text.literal("[").formatted(Formatting.GRAY)
+        return Component.literal("[").withStyle(ChatFormatting.GRAY)
                 .append(name)
-                .append(Text.literal("]").formatted(Formatting.GRAY))
-                .append(Text.literal(" "));
+                .append(Component.literal("]").withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" "));
     }
 
-    public static MutableText statusLine(boolean enabled) {
-        MutableText state = Text.literal(enabled ? "ON" : "OFF")
-                .formatted(enabled ? Formatting.GREEN : Formatting.RED);
+    public static MutableComponent statusLine(boolean enabled) {
+        MutableComponent state = Component.literal(enabled ? "ON" : "OFF")
+                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED);
         return badge()
                 .append(state)
-                .append(Text.literal(" | ALL " + ModState.counter(HpChannel.ALL).get() +"/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
-                .append(Text.literal(" G " + ModState.counter(HpChannel.GUILD).get() + "/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY))
-                .append(Text.literal(" C " + ModState.counter(HpChannel.COOP).get() + "/" + ModState.MY_MESSAGES_REQUIRED).formatted(Formatting.GRAY));
+                .append(Component.literal(" | ALL " + ModState.counter(HpChannel.ALL).get() +"/" + ModState.MY_MESSAGES_REQUIRED).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" G " + ModState.counter(HpChannel.GUILD).get() + "/" + ModState.MY_MESSAGES_REQUIRED).withStyle(ChatFormatting.GRAY))
+                .append(Component.literal(" C " + ModState.counter(HpChannel.COOP).get() + "/" + ModState.MY_MESSAGES_REQUIRED).withStyle(ChatFormatting.GRAY));
     }
 
-    public static MutableText channelsStatusLine() {
+    public static MutableComponent channelsStatusLine() {
         HpChannel[] shown = { HpChannel.ALL, HpChannel.GUILD, HpChannel.PARTY, HpChannel.COOP, HpChannel.PM };
-        MutableText result = badge();
+        MutableComponent result = badge();
         for (int i = 0; i < shown.length; i++) {
             boolean on = ModState.isChannelEnabled(shown[i]);
             result = result
-                    .append(Text.literal((i == 0 ? "" : " | ") + shown[i].displayName() + ": ").formatted(Formatting.GRAY))
-                    .append(Text.literal(on ? "ON" : "OFF").formatted(on ? Formatting.GREEN : Formatting.RED));
+                    .append(Component.literal((i == 0 ? "" : " | ") + shown[i].displayName() + ": ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.literal(on ? "ON" : "OFF").withStyle(on ? ChatFormatting.GREEN : ChatFormatting.RED));
         }
         return result;
     }

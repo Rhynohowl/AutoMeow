@@ -1,7 +1,7 @@
 package org.rhynohowl.automeow.client;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.text.TextColor;
+import net.minecraft.network.chat.TextColor;
 
 public final class ChromaHelper {
     private static final TextColor SKYHANNI_CHROMA = makeNamedColor(0xFFFFFF, "chroma");

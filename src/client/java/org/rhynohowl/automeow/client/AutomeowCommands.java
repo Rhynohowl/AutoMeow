@@ -4,16 +4,16 @@ import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.ChatFormatting;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 public final class AutomeowCommands {
     public static void register() {
@@ -49,53 +49,53 @@ public final class AutomeowCommands {
                             .then(literal("chroma").executes(ctx -> {
                                 if (!ChromaHelper.hasSkyhanni()) {
                                     ctx.getSource().sendFeedback(ChatUtil.badge()
-                                            .append(Text.literal("SkyHanni not found").formatted(Formatting.RED)));
+                                            .append(Component.literal("SkyHanni not found").withStyle(ChatFormatting.RED)));
                                     return 0;
                                 }
                                 boolean newValue = !ModState.CHROMA_WANTED.get();
                                 ModState.setBadgeStyle(newValue ? ModState.BADGE_CHROMA : ModState.BADGE_DEFAULT);
                                 ModConfig.save();
                                 ctx.getSource().sendFeedback(ChatUtil.badge()
-                                        .append(Text.literal("Chroma " + (newValue ? "ON" : "OFF"))
-                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                        .append(Component.literal("Chroma " + (newValue ? "ON" : "OFF"))
+                                                .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
                                 return newValue ? 1 : 0;
                             }))
                             .then(literal("gradient")
                                     .executes(ctx -> {
                                         if (!MeowddingHelper.hasMeowdding()) {
                                             ctx.getSource().sendFeedback(ChatUtil.badge()
-                                                    .append(Text.literal(MeowddingHelper.supportedVersion()
+                                                    .append(Component.literal(MeowddingHelper.supportedVersion()
                                                             ? "MeowddingLib not found"
-                                                            : "Gradient not available on this game version").formatted(Formatting.RED)));
+                                                            : "Gradient not available on this game version").withStyle(ChatFormatting.RED)));
                                             return 0;
                                         }
                                         boolean newValue = !ModState.GRADIENT_WANTED.get();
                                         ModState.setBadgeStyle(newValue ? ModState.BADGE_GRADIENT : ModState.BADGE_DEFAULT);
                                         ModConfig.save();
                                         ctx.getSource().sendFeedback(ChatUtil.badge()
-                                                .append(Text.literal("Gradient " + (newValue ? "ON" : "OFF"))
-                                                        .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                                                .append(Component.literal("Gradient " + (newValue ? "ON" : "OFF"))
+                                                        .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
                                         return newValue ? 1 : 0;
                                     })
                                     .then(literal("on").executes(ctx -> {
                                         if (!MeowddingHelper.hasMeowdding()) {
                                             ctx.getSource().sendFeedback(ChatUtil.badge()
-                                                    .append(Text.literal(MeowddingHelper.supportedVersion()
+                                                    .append(Component.literal(MeowddingHelper.supportedVersion()
                                                             ? "MeowddingLib not found"
-                                                            : "Gradient not available on this game version").formatted(Formatting.RED)));
+                                                            : "Gradient not available on this game version").withStyle(ChatFormatting.RED)));
                                             return 0;
                                         }
                                         ModState.setBadgeStyle(ModState.BADGE_GRADIENT); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Gradient ON").formatted(Formatting.GREEN)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Gradient ON").withStyle(ChatFormatting.GREEN)));
                                         return 1;
                                     }))
                                     .then(literal("off").executes(ctx -> {
                                         ModState.GRADIENT_WANTED.set(false); ModConfig.save();
-                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Text.literal("Gradient OFF").formatted(Formatting.RED)));
+                                        ctx.getSource().sendFeedback(ChatUtil.badge().append(Component.literal("Gradient OFF").withStyle(ChatFormatting.RED)));
                                         return 1;
                                     }))
                                     .then(literal("preset")
-                                            .then(ClientCommandManager
+                                            .then(ClientCommands
                                                     .argument("preset", StringArgumentType.word())
                                                     .suggests((ctx, suggestion) -> {
                                                         for (String opt : ModState.gradientPresetOptions()) suggestion.suggest(opt.toLowerCase(Locale.ROOT));
@@ -109,22 +109,22 @@ public final class AutomeowCommands {
                                                             ModState.setGradientPreset(matched);
                                                             ModConfig.save();
                                                             ctx.getSource().sendFeedback(
-                                                                    ChatUtil.badge().append(Text.literal("Gradient preset set to " + matched.replace('_', ' '))
-                                                                            .formatted(Formatting.GREEN))
+                                                                    ChatUtil.badge().append(Component.literal("Gradient preset set to " + matched.replace('_', ' '))
+                                                                            .withStyle(ChatFormatting.GREEN))
                                                             );
                                                             return 1;
                                                         }
 
                                                         ctx.getSource().sendFeedback(
-                                                                ChatUtil.badge().append(Text.literal("Invalid preset. Choose one of: " + String.join(", ", options).toLowerCase(Locale.ROOT))
-                                                                        .formatted(Formatting.RED))
+                                                                ChatUtil.badge().append(Component.literal("Invalid preset. Choose one of: " + String.join(", ", options).toLowerCase(Locale.ROOT))
+                                                                        .withStyle(ChatFormatting.RED))
                                                         );
                                                         return 0;
                                                     })
                                             )
                                     )
                                     .then(literal("direction")
-                                            .then(ClientCommandManager
+                                            .then(ClientCommands
                                                     .argument("direction", StringArgumentType.word())
                                                     .suggests((ctx, suggestion) -> {
                                                         for (String opt : ModState.GRADIENT_DIRECTIONS) suggestion.suggest(opt.toLowerCase(Locale.ROOT));
@@ -137,36 +137,36 @@ public final class AutomeowCommands {
                                                             ModState.setGradientDirection(matched);
                                                             ModConfig.save();
                                                             ctx.getSource().sendFeedback(
-                                                                    ChatUtil.badge().append(Text.literal("Gradient direction set to " + matched.replace('_', ' '))
-                                                                            .formatted(Formatting.GREEN))
+                                                                    ChatUtil.badge().append(Component.literal("Gradient direction set to " + matched.replace('_', ' '))
+                                                                            .withStyle(ChatFormatting.GREEN))
                                                             );
                                                             return 1;
                                                         }
 
                                                         ctx.getSource().sendFeedback(
-                                                                ChatUtil.badge().append(Text.literal("Invalid direction. Choose one of: " + String.join(", ", ModState.GRADIENT_DIRECTIONS).toLowerCase(Locale.ROOT))
-                                                                        .formatted(Formatting.RED))
+                                                                ChatUtil.badge().append(Component.literal("Invalid direction. Choose one of: " + String.join(", ", ModState.GRADIENT_DIRECTIONS).toLowerCase(Locale.ROOT))
+                                                                        .withStyle(ChatFormatting.RED))
                                                         );
                                                         return 0;
                                                     })
                                             )
                                     )
                                     .then(literal("speed")
-                                            .then(ClientCommandManager
+                                            .then(ClientCommands
                                                     .argument("speed", FloatArgumentType.floatArg(ModState.GRADIENT_SPEED_MIN, ModState.GRADIENT_SPEED_MAX))
                                                     .executes(ctx -> {
                                                         ModState.setGradientSpeed(FloatArgumentType.getFloat(ctx, "speed"));
                                                         ModConfig.save();
                                                         ctx.getSource().sendFeedback(
-                                                                ChatUtil.badge().append(Text.literal("Gradient speed set to " + ModState.GRADIENT_SPEED)
-                                                                        .formatted(Formatting.GREEN))
+                                                                ChatUtil.badge().append(Component.literal("Gradient speed set to " + ModState.GRADIENT_SPEED)
+                                                                        .withStyle(ChatFormatting.GREEN))
                                                         );
                                                         return 1;
                                                     })
                                             )
                                     )
                                     .then(literal("colours")
-                                            .then(ClientCommandManager
+                                            .then(ClientCommands
                                                     .argument("colours", StringArgumentType.greedyString())
                                                     .executes(ctx -> {
                                                         java.util.List<String> colours = new ArrayList<>();
@@ -174,8 +174,8 @@ public final class AutomeowCommands {
                                                             if (hex.isEmpty()) continue;
                                                             if (ChatUtil.parseHexColour(hex) == null) {
                                                                 ctx.getSource().sendFeedback(
-                                                                        ChatUtil.badge().append(Text.literal("\"" + hex + "\" is not a hex colour (e.g. FF66B2 or #FF3399)")
-                                                                                .formatted(Formatting.RED))
+                                                                        ChatUtil.badge().append(Component.literal("\"" + hex + "\" is not a hex colour (e.g. FF66B2 or #FF3399)")
+                                                                                .withStyle(ChatFormatting.RED))
                                                                 );
                                                                 return 0;
                                                             }
@@ -184,8 +184,8 @@ public final class AutomeowCommands {
 
                                                         if (colours.size() < 2) {
                                                             ctx.getSource().sendFeedback(
-                                                                    ChatUtil.badge().append(Text.literal("Needs at least 2 colours")
-                                                                            .formatted(Formatting.RED))
+                                                                    ChatUtil.badge().append(Component.literal("Needs at least 2 colours")
+                                                                            .withStyle(ChatFormatting.RED))
                                                             );
                                                             return 0;
                                                         }
@@ -194,8 +194,8 @@ public final class AutomeowCommands {
                                                         ModState.setGradientPreset(ModState.CUSTOM_GRADIENT_PRESET);
                                                         ModConfig.save();
                                                         ctx.getSource().sendFeedback(
-                                                                ChatUtil.badge().append(Text.literal("Gradient colours set to " + String.join(", ", colours) + " (preset: custom)")
-                                                                        .formatted(Formatting.GREEN))
+                                                                ChatUtil.badge().append(Component.literal("Gradient colours set to " + String.join(", ", colours) + " (preset: custom)")
+                                                                        .withStyle(ChatFormatting.GREEN))
                                                         );
                                                         return 1;
                                                     })
@@ -207,8 +207,8 @@ public final class AutomeowCommands {
                                 boolean newValue = !ModState.DEBUG.get();
                                 ModState.DEBUG.set(newValue);
                                 ctx.getSource().sendFeedback(
-                                        ChatUtil.badge().append(Text.literal("Debug " + (newValue ? "ON" : "OFF"))
-                                                .formatted(newValue ? Formatting.GREEN : Formatting.RED))
+                                        ChatUtil.badge().append(Component.literal("Debug " + (newValue ? "ON" : "OFF"))
+                                                .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED))
                                 );
                                 return newValue ? 1 : 0;
                             }))
@@ -240,14 +240,14 @@ public final class AutomeowCommands {
                             .then(literal("stats").executes(ctx -> {
                                 ctx.getSource().sendFeedback(
                                         ChatUtil.badge()
-                                                .append(Text.literal("Total meows sent: ").formatted(Formatting.WHITE))
-                                                .append(Text.literal(String.valueOf(ModConfig.CONFIG.totalReplies)).formatted(Formatting.AQUA))
+                                                .append(Component.literal("Total meows sent: ").withStyle(ChatFormatting.WHITE))
+                                                .append(Component.literal(String.valueOf(ModConfig.CONFIG.totalReplies)).withStyle(ChatFormatting.AQUA))
 
                                 );
                                 return 1;
                             }))
                             .then(literal("say")
-                                    .then(ClientCommandManager
+                                    .then(ClientCommands
                                             .argument("preset", StringArgumentType.greedyString())
                                             .suggests((ctx, suggestion) -> {
                                                 for (String opt : ModState.REPLY_PRESETS) suggestion.suggest(opt);
@@ -260,15 +260,15 @@ public final class AutomeowCommands {
                                                 if (ok) {
                                                     ModConfig.save();
                                                     ctx.getSource().sendFeedback(
-                                                            ChatUtil.badge().append(Text.literal("reply preset set to \"" + ModState.REPLY_TEXT + "\"")
-                                                                    .formatted(Formatting.GREEN))
+                                                            ChatUtil.badge().append(Component.literal("reply preset set to \"" + ModState.REPLY_TEXT + "\"")
+                                                                    .withStyle(ChatFormatting.GREEN))
                                                     );
                                                     return 1;
                                                 }
 
                                                 ctx.getSource().sendFeedback(
-                                                        ChatUtil.badge().append(Text.literal("Invalid preset. Choose one of: " + String.join(", ", ModState.REPLY_PRESETS))
-                                                                .formatted(Formatting.RED))
+                                                        ChatUtil.badge().append(Component.literal("Invalid preset. Choose one of: " + String.join(", ", ModState.REPLY_PRESETS))
+                                                                .withStyle(ChatFormatting.RED))
                                                 );
                                                 return 0;
                                             })
@@ -277,12 +277,12 @@ public final class AutomeowCommands {
                             .then(literal("mode")
                                     .executes(ctx -> {
                                         ctx.getSource().sendFeedback(
-                                                ChatUtil.badge().append(Text.literal("Reply mode: " + ModState.replyModeName(ModState.REPLY_MODE))
-                                                        .formatted(Formatting.GRAY))
+                                                ChatUtil.badge().append(Component.literal("Reply mode: " + ModState.replyModeName(ModState.REPLY_MODE))
+                                                        .withStyle(ChatFormatting.GRAY))
                                         );
                                         return 1;
                                     })
-                                    .then(ClientCommandManager
+                                    .then(ClientCommands
                                             .argument("mode", StringArgumentType.word())
                                             .suggests((ctx, suggestion) -> {
                                                 for (String opt : ModState.REPLY_MODES) suggestion.suggest(opt.toLowerCase(Locale.ROOT));
@@ -293,16 +293,16 @@ public final class AutomeowCommands {
 
                                                 if (matched == null) {
                                                     ctx.getSource().sendFeedback(
-                                                            ChatUtil.badge().append(Text.literal("Invalid mode. Choose one of: " + String.join(", ", ModState.REPLY_MODES).toLowerCase(Locale.ROOT))
-                                                                    .formatted(Formatting.RED))
+                                                            ChatUtil.badge().append(Component.literal("Invalid mode. Choose one of: " + String.join(", ", ModState.REPLY_MODES).toLowerCase(Locale.ROOT))
+                                                                    .withStyle(ChatFormatting.RED))
                                                     );
                                                     return 0;
                                                 }
 
                                                 if (matched.equals(ModState.REPLY_MODE_CUSTOM) && ModState.CUSTOM_REPLIES.size() < ModState.MIN_CUSTOM_REPLIES) {
                                                     ctx.getSource().sendFeedback(
-                                                            ChatUtil.badge().append(Text.literal("Custom needs at least " + ModState.MIN_CUSTOM_REPLIES + " sounds. Set them with /automeow custom <sounds>")
-                                                                    .formatted(Formatting.RED))
+                                                            ChatUtil.badge().append(Component.literal("Custom needs at least " + ModState.MIN_CUSTOM_REPLIES + " sounds. Set them with /automeow custom <sounds>")
+                                                                    .withStyle(ChatFormatting.RED))
                                                     );
                                                     return 0;
                                                 }
@@ -310,8 +310,8 @@ public final class AutomeowCommands {
                                                 ModState.setReplyMode(matched);
                                                 ModConfig.save();
                                                 ctx.getSource().sendFeedback(
-                                                        ChatUtil.badge().append(Text.literal("Reply mode set to " + ModState.replyModeName(matched))
-                                                                .formatted(Formatting.GREEN))
+                                                        ChatUtil.badge().append(Component.literal("Reply mode set to " + ModState.replyModeName(matched))
+                                                                .withStyle(ChatFormatting.GREEN))
                                                 );
                                                 return 1;
                                             })
@@ -320,12 +320,12 @@ public final class AutomeowCommands {
                             .then(literal("custom")
                                     .executes(ctx -> {
                                         ctx.getSource().sendFeedback(
-                                                ChatUtil.badge().append(Text.literal("Custom sounds: " + String.join(", ", ModState.CUSTOM_REPLIES))
-                                                        .formatted(Formatting.GRAY))
+                                                ChatUtil.badge().append(Component.literal("Custom sounds: " + String.join(", ", ModState.CUSTOM_REPLIES))
+                                                        .withStyle(ChatFormatting.GRAY))
                                         );
                                         return 1;
                                     })
-                                    .then(ClientCommandManager
+                                    .then(ClientCommands
                                             .argument("sounds", StringArgumentType.greedyString())
                                             .suggests((ctx, suggestion) -> {
                                                 String typed = suggestion.getRemaining();
@@ -340,8 +340,8 @@ public final class AutomeowCommands {
                                                     if (sound.isEmpty()) continue;
                                                     if (ModState.matchOption(sound, ModState.REPLY_PRESETS) == null) {
                                                         ctx.getSource().sendFeedback(
-                                                                ChatUtil.badge().append(Text.literal("\"" + sound + "\" is not a reply preset. Choose from: " + String.join(", ", ModState.REPLY_PRESETS))
-                                                                        .formatted(Formatting.RED))
+                                                                ChatUtil.badge().append(Component.literal("\"" + sound + "\" is not a reply preset. Choose from: " + String.join(", ", ModState.REPLY_PRESETS))
+                                                                        .withStyle(ChatFormatting.RED))
                                                         );
                                                         return 0;
                                                     }
@@ -350,8 +350,8 @@ public final class AutomeowCommands {
 
                                                 if (sounds.size() < ModState.MIN_CUSTOM_REPLIES) {
                                                     ctx.getSource().sendFeedback(
-                                                            ChatUtil.badge().append(Text.literal("Needs at least " + ModState.MIN_CUSTOM_REPLIES + " different sounds")
-                                                                    .formatted(Formatting.RED))
+                                                            ChatUtil.badge().append(Component.literal("Needs at least " + ModState.MIN_CUSTOM_REPLIES + " different sounds")
+                                                                    .withStyle(ChatFormatting.RED))
                                                     );
                                                     return 0;
                                                 }
@@ -360,8 +360,8 @@ public final class AutomeowCommands {
                                                 ModState.setReplyMode(ModState.REPLY_MODE_CUSTOM);
                                                 ModConfig.save();
                                                 ctx.getSource().sendFeedback(
-                                                        ChatUtil.badge().append(Text.literal("Custom sounds set to " + String.join(", ", ModState.CUSTOM_REPLIES) + " (mode: custom)")
-                                                                .formatted(Formatting.GREEN))
+                                                        ChatUtil.badge().append(Component.literal("Custom sounds set to " + String.join(", ", ModState.CUSTOM_REPLIES) + " (mode: custom)")
+                                                                .withStyle(ChatFormatting.GREEN))
                                                 );
                                                 return 1;
                                             })
@@ -382,8 +382,8 @@ public final class AutomeowCommands {
         setting.set(value);
         ModConfig.save();
         ctx.getSource().sendFeedback(ChatUtil.badge()
-                .append(Text.literal(label + " " + (value ? "ON" : "OFF"))
-                        .formatted(value ? Formatting.GREEN : Formatting.RED)));
+                .append(Component.literal(label + " " + (value ? "ON" : "OFF"))
+                        .withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED)));
         return value ? 1 : 0;
     }
 
@@ -393,8 +393,8 @@ public final class AutomeowCommands {
             ModState.setChannelEnabled(channel, newValue);
             ModConfig.save();
             ctx.getSource().sendFeedback(ChatUtil.badge()
-                    .append(Text.literal(channel.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
-                            .formatted(newValue ? Formatting.GREEN : Formatting.RED)));
+                    .append(Component.literal(channel.displayName() + " " + (newValue ? "ENABLED" : "DISABLED"))
+                            .withStyle(newValue ? ChatFormatting.GREEN : ChatFormatting.RED)));
             return newValue ? 1 : 0;
         });
     }
