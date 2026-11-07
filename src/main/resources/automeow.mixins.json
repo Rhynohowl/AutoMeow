@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "org.rhynohowl.automeow.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "AvatarRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

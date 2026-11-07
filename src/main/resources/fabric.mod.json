@@ -12,6 +12,7 @@
   },
   "icon": "assets/automeow/icon.png",
   "accessWidener": "${access_widener}",
+  "mixins": ["automeow.mixins.json"],
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-language-kotlin": "*",
