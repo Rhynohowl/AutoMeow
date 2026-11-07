@@ -21,12 +21,12 @@ import java.util.concurrent.TimeUnit;
 
 public final class UpdateChecker {
     // Modrinth
-    private static final String MODRINTH_SLUG = "automeow"; // Modrinth project slug
+    private static final String MODRINTH_SLUG = "automeow";
     private static final int    UPDATE_HTTP_TIMEOUT_SEC = 6;
 
     // Compare dotted numbers like "1.9.2" vs "1.10"
     private static int compareVersion(String versionA, String versionB) {
-        String[] versionAParts = versionA.split("\\D+"); // check non digits
+        String[] versionAParts = versionA.split("\\D+");
         String[] versionBParts = versionB.split("\\D+");
         int maxLength = Math.max(versionAParts.length, versionBParts.length);
         for (int partIndex = 0; partIndex < maxLength; partIndex++) {
@@ -47,7 +47,7 @@ public final class UpdateChecker {
 
     private static String currentModVersion() {
         return FabricLoader.getInstance()
-                .getModContainer("automeow")              // your mod id from fabric.mod.json
+                .getModContainer("automeow")
                 .map(container -> container.getMetadata().getVersion().getFriendlyString())
                 .orElse("0");
     }
@@ -62,9 +62,7 @@ public final class UpdateChecker {
 
     public static void checkForUpdateAsync() {
         final String currentModVer = currentModVersion();
-        //? if <26.1 {
-        /*final String currentMcVer = Minecraft.getInstance().getGameVersion();
-        *///?} else if <26.2 {
+        //? if <26.2 {
         final String currentMcVer = Minecraft.getInstance().getVersionType();
         //?} else {
         /*final String currentMcVer = Minecraft.getInstance().getLaunchedVersion();*/
@@ -74,7 +72,7 @@ public final class UpdateChecker {
                 .connectTimeout(Duration.ofSeconds(UPDATE_HTTP_TIMEOUT_SEC))
                 .build();
 
-        // "All versions" endpoint, we'll pick the newest stable one.
+        // "All versions" endpoint
         String url = "https://api.modrinth.com/v2/project/" + MODRINTH_SLUG + "/version";
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
@@ -95,7 +93,6 @@ public final class UpdateChecker {
 
                         for (int versionIndex = 0; versionIndex < versionsArray.size(); versionIndex++) {
                             JsonObject versionObject = versionsArray.get(versionIndex).getAsJsonObject();
-                            // Prefer stable releases
                             String releaseType = versionObject.has("version_type") ? versionObject.get("version_type").getAsString() : "release";
                             if (!"release".equalsIgnoreCase(releaseType)) continue;
 
@@ -124,8 +121,8 @@ public final class UpdateChecker {
                                                     Style.EMPTY
                                                             .withColor(ChatFormatting.BLUE)
                                                             .withUnderlined(true)
-                                                            .withClickEvent(new ClickEvent.OpenUrl(URI.create(dlUrl)))           // ← open URL
-                                                            .withHoverEvent(new HoverEvent.ShowText(Component.literal(dlUrl))) // ← tooltip
+                                                            .withClickEvent(new ClickEvent.OpenUrl(URI.create(dlUrl)))
+                                                            .withHoverEvent(new HoverEvent.ShowText(Component.literal(dlUrl)))
                                             );
 
                                     var msg = ChatUtil.badge()
@@ -133,12 +130,10 @@ public final class UpdateChecker {
                                             .append(Component.literal("(MC " + currentMcVer + ", v" + currentModVer + " → v" + latest + ") ").withStyle(ChatFormatting.GRAY))
                                             .append(link);
 
-                                    //? if <26.1 {
-                                    /*mc.inGameHud.getChatHud().addMessage(msg); // local only
-                                    *///?} else if <26.2 {
-                                    mc.getChatListener().handleSystemMessage(msg, false); // local only
+                                    //? if <26.2 {
+                                    mc.getChatListener().handleSystemMessage(msg, false);
                                     //?} else {
-                                    /*mc.gui.chatListener().handleSystemMessage(msg, false); // local only*/
+                                    /*mc.gui.chatListener().handleSystemMessage(msg, false); */
                                     //?}
                                 });
                                 CompletableFuture

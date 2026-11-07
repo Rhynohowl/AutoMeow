@@ -8,11 +8,13 @@
   "environment": "client",
   "entrypoints": {
     "client": ["org.rhynohowl.automeow.client.AutomeowClient"],
-    "modmenu": ["org.rhynohowl.automeow.client.AutomeowModMenu"]
+    "modmenu": ["org.rhynohowl.automeow.client.config.AutomeowModMenu"]
   },
   "icon": "assets/automeow/icon.png",
+  "accessWidener": "${access_widener}",
   "depends": {
     "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": "*",
     "fabric-api": "*",
     "minecraft": "${mc_version_range}"
   }

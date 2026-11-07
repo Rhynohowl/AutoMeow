@@ -9,6 +9,9 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
+import org.rhynohowl.automeow.client.config.AutomeowConfigGui;
+import org.rhynohowl.automeow.client.config.ModConfig;
+
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,10 +26,14 @@ public final class AutomeowCommands {
             dispatcher.register(
                     literal("automeow")
                             .executes(ctx -> {
+                                AutomeowConfigGui.open();
+                                return 1;
+                            })
+                            .then(literal("status").executes(ctx -> {
                                 boolean on = ModState.ENABLED.get();
                                 ctx.getSource().sendFeedback(ChatUtil.statusLine(on));
                                 return on ? 1 : 0;
-                            })
+                            }))
                             .then(literal("toggle").executes(ctx -> {
                                 boolean newValue = !ModState.ENABLED.get();
                                 ModState.ENABLED.set(newValue);
@@ -44,6 +51,10 @@ public final class AutomeowCommands {
                                 ModState.ENABLED.set(false);
                                 ModConfig.save();
                                 ctx.getSource().sendFeedback(ChatUtil.statusLine(false));
+                                return 1;
+                            }))
+                            .then(literal("config").executes(ctx -> {
+                                AutomeowConfigGui.open();
                                 return 1;
                             }))
                             .then(literal("chroma").executes(ctx -> {
@@ -64,9 +75,7 @@ public final class AutomeowCommands {
                                     .executes(ctx -> {
                                         if (!MeowddingHelper.hasMeowdding()) {
                                             ctx.getSource().sendFeedback(ChatUtil.badge()
-                                                    .append(Component.literal(MeowddingHelper.supportedVersion()
-                                                            ? "MeowddingLib not found"
-                                                            : "Gradient not available on this game version").withStyle(ChatFormatting.RED)));
+                                                    .append(Component.literal("MeowddingLib not found").withStyle(ChatFormatting.RED)));
                                             return 0;
                                         }
                                         boolean newValue = !ModState.GRADIENT_WANTED.get();
@@ -80,9 +89,7 @@ public final class AutomeowCommands {
                                     .then(literal("on").executes(ctx -> {
                                         if (!MeowddingHelper.hasMeowdding()) {
                                             ctx.getSource().sendFeedback(ChatUtil.badge()
-                                                    .append(Component.literal(MeowddingHelper.supportedVersion()
-                                                            ? "MeowddingLib not found"
-                                                            : "Gradient not available on this game version").withStyle(ChatFormatting.RED)));
+                                                    .append(Component.literal("MeowddingLib not found").withStyle(ChatFormatting.RED)));
                                             return 0;
                                         }
                                         ModState.setBadgeStyle(ModState.BADGE_GRADIENT); ModConfig.save();

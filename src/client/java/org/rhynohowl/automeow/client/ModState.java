@@ -1,5 +1,7 @@
 package org.rhynohowl.automeow.client;
 
+import org.rhynohowl.automeow.client.config.ModConfig;
+
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;

@@ -36,13 +36,7 @@ public final class ChatUtil {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return;
         mc.execute(() -> {
-            //? if <26.1 {
-            /*if (mc.inGameHud != null) {
-                mc.inGameHud.getChatHud().addMessage(
-                        badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY))
-                );
-            }
-            *///?} else if <26.2 {
+            //? if <26.2 {
             mc.getChatListener().handleSystemMessage(
                     badge().append(Component.literal("[DBG] " + msg).withStyle(ChatFormatting.DARK_GRAY)), false
             );

@@ -1,5 +1,6 @@
 plugins {
     id("net.fabricmc.fabric-loom") version '1.16.3' apply false
+    id("com.gradleup.shadow") version '9.6.1' apply false
 }
 
 version = project.findProperty("mod_version") ?: "1.0.0"
@@ -7,6 +8,14 @@ group = project.findProperty("maven_group") ?:"org.rhynohowl"
 
 
 apply plugin: 'net.fabricmc.fabric-loom'
+apply plugin: 'com.gradleup.shadow'
+
+def accessWidenerFile = ["26.1", "26.2"].contains(project.minecraft_version) ? "automeow.accesswidener" : "automeow-26.3.accesswidener"
+
+configurations {
+    shadowModImpl
+    implementation.extendsFrom shadowModImpl
+}
 
 base {
     archivesName = project.archives_base_name
@@ -14,6 +23,7 @@ base {
 
 loom {
     splitEnvironmentSourceSets()
+    accessWidenerPath = rootProject.file("src/main/resources/${accessWidenerFile}")
 
     mods {
         "automeow" {
@@ -25,8 +35,8 @@ loom {
 
 repositories {
     maven { url = "https://maven.gnomecraft.net/releases" } // Mod Menu
-    maven { url = "https://maven.shedaniel.me/" } // Cloth Config
     maven { url = "https://maven.teamresourceful.com/repository/maven-public/" } // Meowdding :3
+    maven { url = "https://maven.notenoughupdates.org/releases/" }
 }
 
 dependencies {
@@ -35,7 +45,6 @@ dependencies {
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.property('deps.fabric_version')}"
     implementation "com.terraformersmc:modmenu:${project.property('deps.modmenu_version')}"
-    implementation "me.shedaniel.cloth:cloth-config-fabric:${project.property('deps.cloth_config_version')}"
     compileOnly("com.teamresourceful.resourcefulconfig:resourcefulconfig-fabric-${project.minecraft_version}:${project.property('deps.resourceful_config')}") {
         transitive = false
     }
@@ -46,6 +55,8 @@ dependencies {
         }
     }
     compileOnly "org.jetbrains.kotlin:kotlin-stdlib:${project.property('deps.kotlin_stdlib')}"
+    shadowModImpl "org.notenoughupdates.moulconfig:modern-${project.minecraft_version}:${project.property('deps.moulconfig')}"
+    runtimeOnly "net.fabricmc:fabric-language-kotlin:${project.property('deps.fabric_language_kotlin')}"
 }
 
 processResources {
@@ -53,14 +64,17 @@ processResources {
     inputs.property "minecraft_version", project.minecraft_version
     inputs.property "loader_version", project.loader_version
     inputs.property "mc_version_range", project.mc_version_range
+    inputs.property "access_widener", accessWidenerFile
     filteringCharset "UTF-8"
 
     filesMatching("fabric.mod.json") {
         expand "version": project.version,
                 "minecraft_version": project.minecraft_version,
                 "loader_version": project.loader_version,
-                "mc_version_range": project.mc_version_range
+                "mc_version_range": project.mc_version_range,
+                "access_widener": accessWidenerFile
     }
+    exclude(["automeow.accesswidener", "automeow-26.3.accesswidener"] - accessWidenerFile)
 }
 
 def targetJavaVersion = project.hasProperty("java_version") ? project.property("java_version").toString().toInteger() : 21
@@ -83,7 +97,22 @@ jar {
 }
 
 tasks.named('jar') {
+    archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}-slim.jar"
+}
+tasks.named('shadowJar') {
+    from(sourceSets.client.output)
+    from("LICENSE") {
+        rename { "${it}_${project.archivesName.get()}" }
+    }
+    configurations = [project.configurations.shadowModImpl]
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude("moulconfig.accesswidener")
+    mergeServiceFiles()
+    relocate("io.github.notenoughupdates.moulconfig", "org.rhynohowl.automeow.deps.moulconfig")
     archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}.jar"
+}
+tasks.named('assemble') {
+    dependsOn tasks.named('shadowJar')
 }
 tasks.named('sourcesJar') {
     archiveFileName = "${project.archives_base_name} ${project.version}-${project.minecraft_version}-sources.jar"

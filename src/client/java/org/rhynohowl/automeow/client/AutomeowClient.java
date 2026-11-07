@@ -10,6 +10,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.network.chat.Component;
+import org.rhynohowl.automeow.client.config.ModConfig;
+
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;

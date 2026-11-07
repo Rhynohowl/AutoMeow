@@ -6,6 +6,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.sounds.SoundEvents;
+import org.rhynohowl.automeow.client.config.ModConfig;
+
 import java.util.Locale;
 
 public final class CatCue {

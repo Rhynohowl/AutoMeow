@@ -1,8 +1,10 @@
-package org.rhynohowl.automeow.client;
+package org.rhynohowl.automeow.client.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.minecraft.client.Minecraft;
+import org.rhynohowl.automeow.client.HpChannel;
+import org.rhynohowl.automeow.client.ModState;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -42,11 +44,11 @@ public final class ModConfig {
         boolean catfactGuild = true;
         boolean catfactPM = true;
         boolean catfactSelfOnly = true;
-        float baseVolume    = 0.8f;
-        float volumeJitter  = 0.15f;
-        float basePitch     = 1.0f;
-        float pitchJitter   = 0.10f;
-        long totalReplies = 0L;
+        public float baseVolume    = 0.8f;
+        public float volumeJitter  = 0.15f;
+        public float basePitch     = 1.0f;
+        public float pitchJitter   = 0.10f;
+        public long totalReplies = 0L;
     }
 
     public static Data CONFIG = new Data();

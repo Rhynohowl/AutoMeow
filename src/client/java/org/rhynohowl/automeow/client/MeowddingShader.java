@@ -1,6 +1,5 @@
 package org.rhynohowl.automeow.client;
 
-//? if >=26.1 {
 import me.owdding.lib.rendering.text.PrideShader;
 import me.owdding.lib.rendering.text.TextShaderKt;
 import me.owdding.lib.rendering.text.builtin.GradientTextShader;
@@ -50,4 +49,3 @@ public final class MeowddingShader {
         return colours;
     }
 }
-//?}

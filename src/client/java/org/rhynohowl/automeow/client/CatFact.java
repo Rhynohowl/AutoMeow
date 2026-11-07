@@ -16,12 +16,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import com.mojang.authlib.GameProfile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class CatFact {
+    private static final Logger LOGGER = LoggerFactory.getLogger("AutoMeow");
     private static final HttpClient catFactHttpClient = HttpClient.newHttpClient();
 
     // yes, seriously. the API says this shit ... evil evil evil >:C
-    private static final List<String> BANNED_WORDS = List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer", "maine coon");
+    private static final List<String> BANNED_WORDS = List.of("hitler", "sex", "sexual", "sexually", "mating", "mate", "heat", "degrees,with", "blackie", "get cancer", "maine coon", "neuter", "pregnant");
     private static final Pattern BANNED_PATTERN = Pattern.compile(
             "\\b(?:" + BANNED_WORDS.stream().map(Pattern::quote).collect(Collectors.joining("|")) + ")(?:s|es|d|ed|ing)?\\b",
             Pattern.CASE_INSENSITIVE
@@ -100,7 +103,7 @@ public final class CatFact {
                             return;
                         }
                         ChatUtil.debug("attempted fact: " + factText);
-                        System.out.println("attempted fact: " + factText);
+                        LOGGER.info("attempted fact: {}", factText);
                         onFactRetrieved.accept(factText);
                     }
                 })
