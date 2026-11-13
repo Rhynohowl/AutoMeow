@@ -24,7 +24,7 @@ public class AutomeowClient implements ClientModInitializer {
     private static String lastWhisperFrom = null;
 
     // Match whole word "meow" (not case-sensitive)
-    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|m+a+ m+o+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r*u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|a+w+r+u*f+s*|y+i+p+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MEOW = Pattern.compile("(^|\\W)(?:m+e+o+w+s*|m+rr+p+s*|m+r+o+w+s*|m+r+a+o+w+s*|m+e+w+s*|m+a+ m+o+w+s*|n+y+a+~*s*|p+u+rr+s*|b+a+r+k+s*|w+oo+f+s*|w+r*u+ff+s*|g+rr+s*|a+r+f+s*|a+w+o+s*|a+w+r+u*f+s*|s+q+u+e+a+k+s*|y+i+p+s*|paws at you)(\\W|$)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern SENDER_PREFIX = Pattern.compile("^[^:]*[A-Za-z0-9_]{3,16}\\s*\\S*\\s*:");
 
@@ -39,11 +39,10 @@ public class AutomeowClient implements ClientModInitializer {
         UpdateChecker.checkForUpdateAsync();
         AutomeowCommands.register();
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> ModConfig.save());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(_ -> ModConfig.save());
 
         // Count outgoing messages YOU type; start a quiet window if you typed "meow"
         ClientSendMessageEvents.CHAT.register(msg -> {
-            if (msg == null) return;
             ModState.rememberSent(msg);
             if (ModState.autoSending.get()) return;
 
@@ -59,7 +58,6 @@ public class AutomeowClient implements ClientModInitializer {
             }
         });
         ClientSendMessageEvents.COMMAND.register(cmd -> {
-            if (cmd == null) return;
 
             String rawCmd = cmd.startsWith("/") ? cmd.substring(1) : cmd;
             String head = rawCmd.split("\\s+", 2)[0].toLowerCase(Locale.ROOT);
@@ -99,7 +97,7 @@ public class AutomeowClient implements ClientModInitializer {
 
         // React to incoming chat
         ClientReceiveMessageEvents.CHAT.register(
-                (message, signedMessage, sender, params, ts) -> {
+                (message, _, sender, params, _) -> {
                     Component decorated = params.decorate(message);
                     Minecraft.getInstance().execute(() -> handleIncoming(decorated, sender, false));
                 }
@@ -135,7 +133,6 @@ public class AutomeowClient implements ClientModInitializer {
     private static void refreshServerMode(Minecraft mc) {
         var servercheck = mc.getCurrentServer();
         boolean hypixel = servercheck != null
-                && servercheck.ip != null
                 && servercheck.ip.toLowerCase(Locale.ROOT).contains("hypixel.net");
         ModState.ON_HYPIXEL.set(hypixel);
     }
@@ -147,8 +144,6 @@ public class AutomeowClient implements ClientModInitializer {
         if (mc.player == null) { ChatUtil.debug("blocked: no player"); return; }
 
         String raw = message.getString();
-
-        if (raw == null) { ChatUtil.debug("blocked: raw null"); return; }
 
         String clean = ChatUtil.normaliseChat(raw);
 
@@ -220,7 +215,7 @@ public class AutomeowClient implements ClientModInitializer {
         String myName = mc.player.getGameProfile().name();
 
         boolean isMe =
-                (sender != null && meUUID != null && meUUID.equals(sender.id())) ||
+                (sender != null && meUUID.equals(sender.id())) ||
                         (myName != null && ownNamePattern(myName).matcher(clean).find()) ||
                         (myName != null && clean.startsWith("<" + myName + ">"));
 
@@ -243,7 +238,7 @@ public class AutomeowClient implements ClientModInitializer {
         if (MEOW.matcher(raw).find()) {
             Player src = CatCue.resolveSender(mc, sender, raw);
             if (src != null) {
-                if (meUUID == null || !meUUID.equals(src.getUUID())) {
+                if (!meUUID.equals(src.getUUID())) {
                     mc.execute(() -> CatCue.triggerCatCueAt(src));
                 }
             }
@@ -310,7 +305,6 @@ public class AutomeowClient implements ClientModInitializer {
 
         ChatUtil.debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
 
-        if (mc.player.connection != null) {
             String face = ModState.APPEND_FACE.get() ? " :3" : "";
             String reply = ModState.pickReply(face);
             if (reply == null) {
@@ -365,7 +359,7 @@ public class AutomeowClient implements ClientModInitializer {
                                 ChatUtil.debug("blocked: manual send detected");
                                 return;
                             }
-                            if (mc.player != null && mc.player.connection != null) {
+                            if (mc.player != null) {
                                 ModState.rememberSent(out);
                                 ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
                                 CatCue.triggerCatCueAt(mc.player);
@@ -385,9 +379,6 @@ public class AutomeowClient implements ClientModInitializer {
 
             CatCue.triggerCatCueAt(mc.player);
             ModState.incrementReplyCount();
-            if (ch != HpChannel.PARTY) ModState.counter(ch).set(0);
-        } else {
-            ChatUtil.debug("blocked: no connection");
-        }
+        if (ch != HpChannel.PARTY) ModState.counter(ch).set(0);
     }
 }
