@@ -305,80 +305,80 @@ public class AutomeowClient implements ClientModInitializer {
 
         ChatUtil.debug("TRIGGER: chan=" + ch + " raw='" + raw + "'");
 
-            String face = ModState.APPEND_FACE.get() ? " :3" : "";
-            String reply = ModState.pickReply(face);
-            if (reply == null) {
-                ChatUtil.debug("blocked: every reply was in your last " + ModState.RECENT_MESSAGES_REMEMBERED + " messages " + ModState.recentSentMessages());
+        String face = ModState.APPEND_FACE.get() ? " :3" : "";
+        String reply = ModState.pickReply(face);
+        if (reply == null) {
+            ChatUtil.debug("blocked: every reply was in your last " + ModState.RECENT_MESSAGES_REMEMBERED + " messages " + ModState.recentSentMessages());
+            return;
+        }
+
+        ModState.skipNextOwnIncrement.set(true);
+
+        String out = reply + face;
+
+        if (!ModState.ON_HYPIXEL.get() && ch == HpChannel.PM) {
+            String target = lastWhisperFrom;
+
+            if (target == null || target.isBlank()) {
+                ChatUtil.debug("PM send blocked: lastWhisperFrom is null/blank. clean='" + clean + "'");
                 return;
             }
 
-            ModState.skipNextOwnIncrement.set(true);
+            String cmd = "msg " + target + " " + out;
+            ChatUtil.debug("sending: /" + cmd);
 
-            String out = reply + face;
-
-            if (!ModState.ON_HYPIXEL.get() && ch == HpChannel.PM) {
-                String target = lastWhisperFrom;
-
-                if (target == null || target.isBlank()) {
-                    ChatUtil.debug("PM send blocked: lastWhisperFrom is null/blank. clean='" + clean + "'");
-                    return;
-                }
-
-                String cmd = "msg " + target + " " + out;
-                ChatUtil.debug("sending: /" + cmd);
-
-                ModState.counter(ch).set(0);
-                ModState.startTimer();
-                ModState.rememberSent(out);
-                ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
-
-                CatCue.triggerCatCueAt(mc.player);
-                ModState.incrementReplyCount();
-                return;
-            }
-
-            if (ModState.ON_HYPIXEL.get()) {
-                String cmd = switch (ch) {
-                    case GUILD -> "gc " + out;
-                    case PARTY -> "pc " + out;
-                    case COOP -> "cc " + out;
-                    case PM -> "r " + out;
-                    case OFFICER -> "oc " + out;
-                    case ALL -> "ac " + out;
-                    case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
-                };
-                ChatUtil.debug("sending: " + cmd);
-                ChatUtil.debug("detected channel: " + ch);
-                ModState.startTimer();
-                ModState.manualSendPending.set(false);
-                final HpChannel finalCh = ch;
-                CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS)
-                        .execute(() -> mc.execute(() -> {
-                            if (ModState.manualSendPending.get()) {
-                                ModState.manualSendPending.set(false);
-                                ChatUtil.debug("blocked: manual send detected");
-                                return;
-                            }
-                            if (mc.player != null) {
-                                ModState.rememberSent(out);
-                                ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
-                                CatCue.triggerCatCueAt(mc.player);
-                                ModState.incrementReplyCount();
-                                if (finalCh != HpChannel.PARTY) ModState.counter(finalCh).set(0);
-                            }
-                        }));
-                return;
-            } else {
-                ChatUtil.debug("sending: " + out);
-                ChatUtil.debug("detected channel: " + ch);
-                ModState.startTimer();
-                ModState.manualSendPending.set(false);
-                ModState.rememberSent(out);
-                ModState.runAutoSend(() -> mc.player.connection.sendChat(out));
-            }
+            ModState.counter(ch).set(0);
+            ModState.startTimer();
+            ModState.rememberSent(out);
+            ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
 
             CatCue.triggerCatCueAt(mc.player);
             ModState.incrementReplyCount();
+            return;
+        }
+
+        if (ModState.ON_HYPIXEL.get()) {
+            String cmd = switch (ch) {
+                case GUILD -> "gc " + out;
+                case PARTY -> "pc " + out;
+                case COOP -> "cc " + out;
+                case PM -> "r " + out;
+                case OFFICER -> "oc " + out;
+                case ALL -> "ac " + out;
+                case IGNORE -> throw new IllegalStateException("IGNORE should have returned early");
+            };
+            ChatUtil.debug("sending: " + cmd);
+            ChatUtil.debug("detected channel: " + ch);
+            ModState.startTimer();
+            ModState.manualSendPending.set(false);
+            final HpChannel finalCh = ch;
+            CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS)
+                    .execute(() -> mc.execute(() -> {
+                        if (ModState.manualSendPending.get()) {
+                            ModState.manualSendPending.set(false);
+                            ChatUtil.debug("blocked: manual send detected");
+                            return;
+                        }
+                        if (mc.player != null) {
+                            ModState.rememberSent(out);
+                            ModState.runAutoSend(() -> mc.player.connection.sendCommand(cmd));
+                            CatCue.triggerCatCueAt(mc.player);
+                            ModState.incrementReplyCount();
+                            if (finalCh != HpChannel.PARTY) ModState.counter(finalCh).set(0);
+                        }
+                    }));
+            return;
+        } else {
+            ChatUtil.debug("sending: " + out);
+            ChatUtil.debug("detected channel: " + ch);
+            ModState.startTimer();
+            ModState.manualSendPending.set(false);
+            ModState.rememberSent(out);
+            ModState.runAutoSend(() -> mc.player.connection.sendChat(out));
+        }
+
+        CatCue.triggerCatCueAt(mc.player);
+        ModState.incrementReplyCount();
         if (ch != HpChannel.PARTY) ModState.counter(ch).set(0);
     }
 }
